@@ -62,6 +62,18 @@ functions:
       - httpApi:
           path: /meditation
           method: get
+      - httpApi:
+          path: /meditation/{meditationId}
+          method: get
+      - httpApi:
+          path: /meditation
+          method: post
+      - httpApi:
+          path: /meditation/{meditationId}
+          method: put
+      - httpApi:
+          path: /meditation/{meditationId}
+          method: delete
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -104,12 +116,35 @@ functions:
 #      variable2: value2
 
 # you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
+resources:
+ Resources:
+   DynamoTable:
+     Type: AWS::DynamoDB::Table
+     Properties:
+       TableName: tempora-golang-local
+       BillingMode: PAY_PER_REQUEST
+       AttributeDefinitions:
+        - AttributeName: 'pk'
+          AttributeType: 'S'
+        - AttributeName: 'sk'
+          AttributeType: 'S'
+        - AttributeName: 'data'
+          AttributeType: 'S'
+       KeySchema:
+        - AttributeName: 'pk'
+          KeyType: 'HASH'
+        - AttributeName: 'sk'
+          KeyType: 'RANGE'  
+       GlobalSecondaryIndexes:
+        - IndexName: 'gs1'
+          Projection:
+            ProjectionType: ALL
+          KeySchema:
+            - AttributeName: 'sk'
+              KeyType: 'HASH'
+            - AttributeName: 'data'
+              KeyType: 'RANGE'
+
 #  Outputs:
 #     NewOutput:
 #       Description: "Description for the output"
