@@ -18,32 +18,41 @@ service: tempora-golang
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: '2'
+frameworkVersion: "2"
 
 provider:
   name: aws
   runtime: go1.x
   lambdaHashingVersion: 20201221
+  environment:
+    DOMAIN_SUFFIX: tempora-kairos
+
+  httpApi:
+    authorizers:
+      serviceAuthorizer:
+        identitySource: $request.header.Authorization
+        issuerUrl:
+          Fn::Join:
+            - ""
+            - - "https://cognito-idp."
+              - "${opt:region, self:provider.region}"
+              - ".amazonaws.com/"
+              - Ref: UserPool
+        audience:
+          - Ref: UserPoolClient
 
 # you can overwrite defaults here
-#  stage: dev
+stage: dev
 #  region: us-east-1
 
 # you can add statements to the Lambda function's IAM Role here
-  # iamRoleStatements:
-  #  - Effect: "Allow"
-  #    Action:
-  #      - "s3:ListBucket"
-  #    Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-  #  - Effect: "Allow"
-  #    Action:
-  #      - "s3:PutObject"
-  #    Resource:
-  #      Fn::Join:
-  #        - ""
-  #        - - "arn:aws:s3:::"
-  #          - "Ref" : "ServerlessDeploymentBucket"
-  #          - "/*"
+iamRoleStatements:
+  - Effect: "Allow"
+    Action:
+      - "dynamodb:*"
+    Resource:
+      - !GetAtt DynamoTable.Arn
+      - !Sub "${DynamoTable.Arn}/index/gs1"
 
 # you can define service wide environment variables here
 #  environment:
@@ -58,22 +67,33 @@ package:
 functions:
   meditation:
     handler: bin/tempora
+    environment:
+      DDB_TABLE: !Ref DynamoTable
     events:
       - httpApi:
-          path: /meditation
+          path: /meditations
           method: get
+          authorizer: serviceAuthorizer
       - httpApi:
-          path: /meditation/{meditationId}
+          path: /meditations/{meditationId}
           method: get
+          authorizer: serviceAuthorizer
       - httpApi:
-          path: /meditation
+          path: /meditations
           method: post
+          authorizer: serviceAuthorizer
       - httpApi:
-          path: /meditation/{meditationId}
+          path: /meditations/{meditationId}
           method: put
+          authorizer: serviceAuthorizer
       - httpApi:
-          path: /meditation/{meditationId}
+          path: /meditations/{meditationId}
+          method: patch
+          authorizer: serviceAuthorizer
+      - httpApi:
+          path: /meditations/{meditationId}
           method: delete
+          authorizer: serviceAuthorizer
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -117,34 +137,73 @@ functions:
 
 # you can add CloudFormation resource templates here
 resources:
- Resources:
-   DynamoTable:
-     Type: AWS::DynamoDB::Table
-     Properties:
-       TableName: tempora-golang-local
-       BillingMode: PAY_PER_REQUEST
-       AttributeDefinitions:
-        - AttributeName: 'pk'
-          AttributeType: 'S'
-        - AttributeName: 'sk'
-          AttributeType: 'S'
-        - AttributeName: 'data'
-          AttributeType: 'S'
-       KeySchema:
-        - AttributeName: 'pk'
-          KeyType: 'HASH'
-        - AttributeName: 'sk'
-          KeyType: 'RANGE'  
-       GlobalSecondaryIndexes:
-        - IndexName: 'gs1'
-          Projection:
-            ProjectionType: ALL
-          KeySchema:
-            - AttributeName: 'sk'
-              KeyType: 'HASH'
-            - AttributeName: 'data'
-              KeyType: 'RANGE'
+  Resources:
+    DynamoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: tempora-golang-${opt:stage, 'dev'}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: "pk"
+            AttributeType: "S"
+          - AttributeName: "sk"
+            AttributeType: "S"
+          - AttributeName: "ppk"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "pk"
+            KeyType: "HASH"
+          - AttributeName: "sk"
+            KeyType: "RANGE"
+        GlobalSecondaryIndexes:
+          - IndexName: "gs1"
+            Projection:
+              ProjectionType: ALL
+            KeySchema:
+              - AttributeName: "ppk"
+                KeyType: "HASH"
+    HttpApi:
+      DependsOn: UserPool
 
+    UserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: service-user-pool-${opt:stage, self:provider.stage}
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+
+    UserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: service-user-pool-client-${opt:stage, self:provider.stage}
+        AllowedOAuthFlows:
+          - implicit
+        AllowedOAuthFlowsUserPoolClient: true
+        AllowedOAuthScopes:
+          - phone
+          - email
+          - openid
+          - profile
+          - aws.cognito.signin.user.admin
+        UserPoolId:
+          Ref: UserPool
+        CallbackURLs:
+          - http://localhost:3000
+        ExplicitAuthFlows:
+          - ALLOW_USER_SRP_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        GenerateSecret: false
+        SupportedIdentityProviders:
+          - COGNITO
+
+    UserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        UserPoolId:
+          Ref: UserPool
+        Domain: service-user-pool-domain-${opt:stage, self:provider.stage}-${self:provider.environment.DOMAIN_SUFFIX}
 #  Outputs:
 #     NewOutput:
 #       Description: "Description for the output"
