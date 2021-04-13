@@ -1,6 +1,8 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 type Meditation struct {
 	ID        string    `json:"_id"`
@@ -14,7 +16,7 @@ type Meditation struct {
 }
 
 type CreateMeditationInput struct {
-	URL  string `json:"audioUrl" binding:"required"`
-	Name string `json:"name" binding:"required"`
-	Text string `json:"text" binding:"required"`
+	URL  string `json:"audioUrl" validate:"required,url"`
+	Name string `json:"name" validate:"required"`
+	Text string `json:"text" validate:"required"`
 }

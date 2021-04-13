@@ -6,6 +6,8 @@ bin
 
 node_modules/
 
+test
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
