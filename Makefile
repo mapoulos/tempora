@@ -2,7 +2,7 @@
 
 build:
 	env GOOS=linux go build -ldflags="-s -w" -o bin/meditation meditation.go ddb_store.go types.go handlers.go
-	env GOOS=linux go build -ldflags="-s -w" -o bin/upload internal/upload.go 
+	
 
 clean:
 	rm -rf ./bin

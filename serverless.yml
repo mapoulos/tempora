@@ -72,19 +72,11 @@ package:
     - ./bin/**
 
 functions:
-  upload:
-    handler: bin/upload
-    environment:
-      AUDIO_BUCKET: !Ref AudioBucket
-    events:
-      - httpApi:
-          path: /upload-url
-          method: get
-          authorizer: serviceAuthorizer
   meditation:
-    handler: bin/tempora
+    handler: bin/meditation
     environment:
       DDB_TABLE: !Ref DynamoTable
+      AUDIO_BUCKET: !Ref AudioBucket
     events:
       - httpApi:
           path: /meditations
@@ -109,6 +101,10 @@ functions:
       - httpApi:
           path: /meditations/{meditationId}
           method: delete
+          authorizer: serviceAuthorizer
+      - httpApi:
+          path: /upload-url
+          method: get
           authorizer: serviceAuthorizer
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
