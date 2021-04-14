@@ -178,6 +178,18 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: equulus-tempora-${self:provider.stage}
+
+    AudioBucketReadPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref AudioBucket
+        PolicyDocument:
+          Statement:
+          - Action: 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub 'arn:aws:s3:::${AudioBucket}/public/*'
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
     
     CloudFrontOriginAccessIdentity:
       Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
