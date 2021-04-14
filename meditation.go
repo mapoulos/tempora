@@ -13,6 +13,10 @@ var validate *validator.Validate
 func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
 	store := NewDynamoMeditationStore(os.Getenv("DDB_TABLE"), false, false)
 
+	if req.RequestContext.HTTP.Path == "/upload-url" {
+		return uploadHandler(req)
+	}
+
 	switch req.RequestContext.HTTP.Method {
 	case "GET":
 		if _, ok := req.PathParameters["meditationId"]; ok {
