@@ -211,6 +211,18 @@ resources:
             AcmCertificateArn: arn:aws:acm:us-east-1:051489715994:certificate/033aa07f-b8b8-4668-bd95-55af13b78b29
             SslSupportMethod: 'sni-only'
 
+    DNSRecord:
+      Type: AWS::Route53::RecordSetGroup
+      Properties:
+        HostedZoneName: equul.us.
+        RecordSets:
+          - Name: tempora-audio-${self:provider.stage}.equul.us
+            Type: A
+            AliasTarget:
+              # for this magic var: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-route53.html
+              HostedZoneId: Z2FDTNDATAQYW2
+              DNSName: !GetAtt AudioDistribution.DomainName
+
     UserPool:
       Type: AWS::Cognito::UserPool
       Properties:
