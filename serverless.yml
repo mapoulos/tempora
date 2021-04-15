@@ -53,6 +53,7 @@ provider:
       Resource:
         - !GetAtt DynamoTable.Arn
         - !Sub "${DynamoTable.Arn}/index/gs1"
+        - !Sub "${DynamoTable.Arn}/index/gs2"
     - Effect: "Allow"
       Action:
         - "s3:*"
@@ -102,6 +103,9 @@ functions:
           path: /meditations/{meditationId}
           method: delete
           authorizer: serviceAuthorizer
+      - httpApi:
+          path: /public/meditations
+          method: get
       - httpApi:
           path: /upload-url
           method: get
@@ -160,7 +164,9 @@ resources:
             AttributeType: "S"
           - AttributeName: "sk"
             AttributeType: "S"
-          - AttributeName: "ppk"
+          - AttributeName: "ppk" # get meditation by id 
+            AttributeType: "S"
+          - AttributeName: "pppk" # public meditations
             AttributeType: "S"
         KeySchema:
           - AttributeName: "pk"
@@ -168,12 +174,20 @@ resources:
           - AttributeName: "sk"
             KeyType: "RANGE"
         GlobalSecondaryIndexes:
-          - IndexName: "gs1"
+          - IndexName: "gs1" # for finding by meditationId
             Projection:
               ProjectionType: ALL
             KeySchema:
               - AttributeName: "ppk"
                 KeyType: "HASH"
+          - IndexName: "gs2" # For listing public meditations
+            Projection:
+              ProjectionType: ALL
+            KeySchema:
+              - AttributeName: "pppk"
+                KeyType: "HASH"
+              - AttributeName: "sk"
+                KeyType: "RANGE"
     AudioBucket:
       Type: AWS::S3::Bucket
       Properties:
