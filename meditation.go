@@ -33,10 +33,11 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 	case "PUT":
 		return UpdateMeditationHandler(req, &store)
 	case "DELETE":
+		return DeleteMeditationHandler(req, &store)
 	default:
 		return ListMeditationHandler(req, &store)
 	}
-	return ListMeditationHandler(req, &store)
+
 }
 
 func main() {

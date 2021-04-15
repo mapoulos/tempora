@@ -220,6 +220,30 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	}, nil
 }
 
+func DeleteMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMeditationStore) (*events.APIGatewayV2HTTPResponse, error) {
+	userId, ok := req.RequestContext.Authorizer.JWT.Claims["sub"]
+	if !ok {
+		return userIdNotFoundError(), nil
+	}
+
+	meditationId, ok := req.PathParameters["meditationId"]
+	if !ok {
+		return internalServerError("No {meditationId{} found in path parameters"), nil
+	}
+	err := store.DeleteMeditation(userId, meditationId)
+	if err != nil {
+		return notFound("No meditation with id " + meditationId + " was found"), nil
+	}
+
+	return &events.APIGatewayV2HTTPResponse{
+		StatusCode:      204,
+		IsBase64Encoded: false,
+		Body:            string(""),
+		Headers:         map[string]string{},
+	}, nil
+
+}
+
 type UploadResponse struct {
 	URL string
 	Key string
