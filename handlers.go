@@ -89,6 +89,7 @@ func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		URL:       input.URL,
 		Name:      input.Name,
 		Text:      input.Text,
+		Public:    input.Public,
 		UserId:    userId,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -125,6 +126,31 @@ func ListMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMedi
 	}
 
 	meditations, err := store.ListMeditations(userId)
+	if err != nil {
+		resp := events.APIGatewayV2HTTPResponse{
+			StatusCode:      500,
+			IsBase64Encoded: false,
+			Body:            err.Error(),
+		}
+		return &resp, nil
+	}
+
+	meditationJson, _ := json.Marshal(meditations)
+
+	resp := events.APIGatewayV2HTTPResponse{
+		StatusCode:      200,
+		IsBase64Encoded: false,
+		Body:            string(meditationJson),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+
+	return &resp, nil
+}
+
+func ListPublicMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMeditationStore) (*events.APIGatewayV2HTTPResponse, error) {
+	meditations, err := store.ListPublicMeditations()
 	if err != nil {
 		resp := events.APIGatewayV2HTTPResponse{
 			StatusCode:      500,
@@ -205,6 +231,7 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	meditation.Name = newMeditationInput.Name
 	meditation.Text = newMeditationInput.Text
 	meditation.URL = newMeditationInput.URL
+	meditation.Public = newMeditationInput.Public
 
 	store.UpdateMeditation(meditation)
 
