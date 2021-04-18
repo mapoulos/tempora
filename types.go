@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"time"
 )
 
@@ -17,8 +18,19 @@ type Meditation struct {
 }
 
 type CreateMeditationInput struct {
-	URL    string `json:"audioUrl" validate:"required,url"`
-	Name   string `json:"name" validate:"required"`
-	Text   string `json:"text" validate:"required"`
-	Public bool   `json:"isPublic" validate:"required"`
+	UploadKey string `json:"uploadKey" validate:"required,startswith=upload/"`
+	Name      string `json:"name" validate:"required"`
+	Text      string `json:"text" validate:"required"`
+	Public    bool   `json:"isPublic"`
+}
+
+func getRegion() string {
+	envRegion := os.Getenv("AWS_REGION")
+	defaultRegion := "us-east-1"
+
+	if envRegion == "" {
+		return defaultRegion
+	}
+
+	return envRegion
 }

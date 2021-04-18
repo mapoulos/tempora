@@ -60,7 +60,7 @@ provider:
       Resource:
         - !Sub "${AudioBucket.Arn}"
         - !Sub "${AudioBucket.Arn}/*"
-      
+
 
 # you can define service wide environment variables here
 #  environment:
@@ -78,6 +78,8 @@ functions:
     environment:
       DDB_TABLE: !Ref DynamoTable
       AUDIO_BUCKET: !Ref AudioBucket
+      PUBLIC_AUDIO_BASE: tempora-audio-${self:provider.stage}.equul.us
+      CLOUDFRONT_DISTRIBUTION_ID: !Ref AudioDistribution
     events:
       - httpApi:
           path: /meditations
@@ -164,7 +166,7 @@ resources:
             AttributeType: "S"
           - AttributeName: "sk"
             AttributeType: "S"
-          - AttributeName: "ppk" # get meditation by id 
+          - AttributeName: "ppk" # get meditation by id
             AttributeType: "S"
           - AttributeName: "pppk" # public meditations
             AttributeType: "S"
@@ -192,6 +194,11 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: equulus-tempora-${self:provider.stage}
+        LifecycleConfiguration:
+          Rules:
+            - ExpirationInDays: 1
+              Prefix: "upload/"
+              Status: Enabled
 
     AudioBucketReadPolicy:
       Type: AWS::S3::BucketPolicy
@@ -204,7 +211,7 @@ resources:
             Resource: !Sub 'arn:aws:s3:::${AudioBucket}/public/*'
             Principal:
               CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
-    
+
     CloudFrontOriginAccessIdentity:
       Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
       Properties:
@@ -229,7 +236,7 @@ resources:
               OriginPath: '/public'
               S3OriginConfig:
                 OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
-          PriceClass: 'PriceClass_100'    
+          PriceClass: 'PriceClass_100'
           DefaultRootObject: index.html
           Aliases:
             - tempora-audio-${self:provider.stage}.equul.us

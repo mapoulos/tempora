@@ -55,11 +55,13 @@ func internalServerError(msg string) *events.APIGatewayV2HTTPResponse {
 }
 
 func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMeditationStore) (*events.APIGatewayV2HTTPResponse, error) {
+	// get user id
 	userId, ok := req.RequestContext.Authorizer.JWT.Claims["sub"]
 	if !ok {
 		return userIdNotFoundError(), nil
 	}
 
+	// parse the request body
 	input := CreateMeditationInput{}
 
 	err := json.Unmarshal([]byte(req.Body), &input)
@@ -77,16 +79,31 @@ func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		}, nil
 	}
 
+	// validate the request body
 	err = validate.Struct(input)
 	if err != nil {
 		return badRequest(err.Error()), nil
 	}
 
+	// ensure the key is in s3 and that we have an mp3
+	err = ValidateMP3(input.UploadKey)
+	if err != nil {
+		return badRequest("Provided file is not a properly encoded mp3."), nil
+	}
+
 	u4 := uuid.NewV4()
 	now := time.Now()
+
+	// move the mp3 to public and rename
+	newPath := "public/" + u4.String() + ".mp3"
+	err = RenameMP3(input.UploadKey, newPath)
+	if err != nil {
+		return internalServerError(err.Error()), nil
+	}
+
 	newMeditation := Meditation{
 		ID:        u4.String(),
-		URL:       input.URL,
+		URL:       mapUUIDToPublicURL(u4.String()),
 		Name:      input.Name,
 		Text:      input.Text,
 		Public:    input.Public,
@@ -218,6 +235,8 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	}
 
 	newMeditationInput := CreateMeditationInput{}
+	fmt.Println(newMeditationInput)
+
 	err = json.Unmarshal([]byte(req.Body), &newMeditationInput)
 	if err != nil {
 		return badRequest(err.Error()), nil
@@ -227,10 +246,24 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		return badRequest(err.Error()), nil
 	}
 
+	// ensure the key is in s3 and that we have an mp3
+	if newMeditationInput.UploadKey != "" {
+		err = ValidateMP3(newMeditationInput.UploadKey)
+		if err != nil {
+			return badRequest("Provided file is not a properly encoded mp3."), nil
+		}
+		newPath := "public/" + meditation.ID + ".mp3"
+		err = RenameMP3(newMeditationInput.UploadKey, newPath)
+		invalidateCacheForUuid(meditationId)
+
+		if err != nil {
+			return internalServerError("Could not rename mp3"), nil
+		}
+	}
+
 	meditation.UpdatedAt = time.Now()
 	meditation.Name = newMeditationInput.Name
 	meditation.Text = newMeditationInput.Text
-	meditation.URL = newMeditationInput.URL
 	meditation.Public = newMeditationInput.Public
 
 	store.UpdateMeditation(meditation)
@@ -272,8 +305,8 @@ func DeleteMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 }
 
 type UploadResponse struct {
-	URL string
-	Key string
+	URL string `json:"uploadUrl"`
+	Key string `json:"uploadKey"`
 }
 
 func uploadHandler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
