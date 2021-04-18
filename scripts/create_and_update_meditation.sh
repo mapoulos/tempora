@@ -2,7 +2,7 @@
 
 export AUTH_TOKEN="`node ~/git/tempora/scripts/getTestUserAuthToken.js`"
 
-TEMP_JSON="`date '+%s'`.json"
+TEMP_JSON=".`date '+%s'`.json"
 
 echo "1) getting upload url..."
 http https://1sctves1d1.execute-api.us-east-1.amazonaws.com/upload-url Authorization:"$AUTH_TOKEN" > "$TEMP_JSON"
