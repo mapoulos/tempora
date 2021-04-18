@@ -1,4 +1,4 @@
-module github.com/mapoulos/tempora-golang
+module github.com/mapoulos/tempora/backend
 
 go 1.16
 
