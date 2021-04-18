@@ -88,7 +88,7 @@ func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	// ensure the key is in s3 and that we have an mp3
 	err = ValidateMP3(input.UploadKey)
 	if err != nil {
-		return badRequest(err.Error()), nil
+		return badRequest("Provided file is not a properly encoded mp3."), nil
 	}
 
 	u4 := uuid.NewV4()
@@ -249,10 +249,10 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	// ensure the key is in s3 and that we have an mp3
 	if newMeditationInput.UploadKey != "" {
 		err = ValidateMP3(newMeditationInput.UploadKey)
-		newPath := "public/" + meditation.ID + ".mp3"
 		if err != nil {
-			return badRequest(err.Error()), nil
+			return badRequest("Provided file is not a properly encoded mp3."), nil
 		}
+		newPath := "public/" + meditation.ID + ".mp3"
 		err = RenameMP3(newMeditationInput.UploadKey, newPath)
 		if err != nil {
 			return internalServerError("Could not rename mp3"), nil
