@@ -254,6 +254,8 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		}
 		newPath := "public/" + meditation.ID + ".mp3"
 		err = RenameMP3(newMeditationInput.UploadKey, newPath)
+		invalidateCacheForUuid(meditationId)
+
 		if err != nil {
 			return internalServerError("Could not rename mp3"), nil
 		}

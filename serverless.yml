@@ -79,6 +79,7 @@ functions:
       DDB_TABLE: !Ref DynamoTable
       AUDIO_BUCKET: !Ref AudioBucket
       PUBLIC_AUDIO_BASE: tempora-audio-${self:provider.stage}.equul.us
+      CLOUDFRONT_DISTRIBUTION_ID: !Ref AudioDistribution
     events:
       - httpApi:
           path: /meditations
