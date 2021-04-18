@@ -24,6 +24,11 @@ type CreateMeditationInput struct {
 	Public    bool   `json:"isPublic"`
 }
 
+type UploadResponse struct {
+	URL string `json:"uploadUrl"`
+	Key string `json:"uploadKey"`
+}
+
 func getRegion() string {
 	envRegion := os.Getenv("AWS_REGION")
 	defaultRegion := "us-east-1"
