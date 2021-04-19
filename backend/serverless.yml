@@ -40,6 +40,26 @@ provider:
               - Ref: UserPool
         audience:
           - Ref: UserPoolClient
+    cors:
+      allowedOrigins:
+        - http://localhost:3000
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+      allowedMethods:
+        - GET
+        - PUT
+        - POST
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
+      maxAge: 6000
+
 
 # you can overwrite defaults here
   stage: dev
