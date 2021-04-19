@@ -31,8 +31,14 @@ const meditationsSlice = createSlice({
 })
 
 export const fetchPublicMeditationsThunk = (): ThunkAction<void, RootState, unknown, AnyAction> => async dispatch => {
-	const meditations = await fetchPublicMeditations()
-	dispatch(setMeditations(meditations))
+	try {
+		const meditations = await fetchPublicMeditations()
+		dispatch(setMeditations(meditations))
+		dispatch(setIsLoading(false))
+	} catch(error) {
+		console.error("Problem loading public meditations")
+		console.error(error)
+	}
 }
 
 export const { setIsLoading, setMeditations } = meditationsSlice.actions

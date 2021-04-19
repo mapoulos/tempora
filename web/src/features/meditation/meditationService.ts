@@ -3,9 +3,9 @@ import {DateTime} from 'luxon'
 const base = import.meta.env.VITE_BACKEND_URL_BASE;
 
 export type Meditation = {
-	_createdAt: DateTime,
+	_createdAt: number,
 	_id: string,
-	_updatedAt: DateTime,
+	_updatedAt: number,
 	_userId: string,
 	audioUrl: string,
 	isPublic: boolean,
@@ -26,8 +26,8 @@ export type MeditationDTO = {
 
 const mapDTOToMeditation = (m: MeditationDTO): Meditation => ({
 	...m,
-	_createdAt: DateTime.fromISO(m._createdAt),
-	_updatedAt: DateTime.fromISO(m._updatedAt)
+	_createdAt: DateTime.fromISO(m._createdAt).toMillis(),
+	_updatedAt: DateTime.fromISO(m._updatedAt).toMillis()
 })
 
 export const fetchPublicMeditations = async (): Promise<Meditation[]> => {
