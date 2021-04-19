@@ -1,14 +1,17 @@
+import { Box, Card, CardContent, CardHeader } from '@material-ui/core'
 import React from 'react'
 import './App.css'
 import { MeditationTable } from './features/meditation/MeditationTable'
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
+    <Box>
+        <Card variant="outlined">
+          <CardHeader title="Tempora"/>
+          <CardContent>Hello</CardContent>
+        </Card>
         <MeditationTable />
-      </header>
-    </div>
+    </Box>
   )
 }
 
