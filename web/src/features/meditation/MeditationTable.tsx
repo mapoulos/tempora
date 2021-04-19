@@ -4,34 +4,52 @@ import {
   selectIsPublicMeditationsLoading,
   selectPublicMeditations,
 } from "./meditationSlice";
-import { DataGrid } from "@material-ui/data-grid";
+import { Card, CardActions, CardContent, CardHeader } from "@material-ui/core";
 
 export function MeditationTable() {
   const isLoading = useSelector(selectIsPublicMeditationsLoading);
   const publicMeditations = useSelector(selectPublicMeditations);
 
-  const rows = publicMeditations.map((m) => ({
-    ...m,
-    id: m._id,
-  }));
+//   const rows = publicMeditations.map((m) => ({
+//     ...m,
+//     id: m._id,
+// 	audio: (
+// 		<audio controls><source src={m.audioUrl} type="audio/mpeg"></source></audio>
+// 	)
+//   }));
 
-  const columns = [
-    {
-      field: "name",
-      headerName: "Name",
-	  flex: 1
-    },
-    {
-      field: "text",
-      headerName: "Text",
-	  flex: 3
-    },
-  ];
+//   const columns = [
+//     {
+//       field: "name",
+//       headerName: "Name",
+// 	  flex: 1
+//     },
+//     {
+//       field: "text",
+//       headerName: "Text",
+// 	  flex: 3
+//     },
+// 	{
+// 		field: "audio",
+// 		headerName: "audio",
+// 		flex: 3
+// 	},
+//   ];
+
+	const meditationCards = publicMeditations.map((m) => (
+		<Card>
+			<CardHeader title={m.name}/>
+			<CardContent>{m.text}</CardContent>
+			<CardActions><audio controls><source src={m.audioUrl} type="audio/mpeg"></source></audio></CardActions>
+		</Card>
+	))
+
+
 
   return (
     <div style={{ display: "flex", height: "1000px" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rows} columns={columns}></DataGrid>
+	{meditationCards}
       </div>
     </div>
   );
