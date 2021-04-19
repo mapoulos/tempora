@@ -4,12 +4,12 @@ import './index.css'
 import { Provider } from 'react-redux'
 import App from './App'
 import store from './app/store'
-import { fetchPublicMeditations } from './features/meditation/meditationService'
+import { fetchPublicMeditationsThunk } from './features/meditation/meditationSlice'
+// import { fetchPublicMeditations } from './features/meditation/meditationService'
 
-const meditations = fetchPublicMeditations()
-  .then((meditations) => {
-    console.log(meditations)
-  })
+
+store.dispatch(fetchPublicMeditationsThunk())
+
 
 ReactDOM.render(
   <React.StrictMode>

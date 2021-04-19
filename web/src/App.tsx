@@ -1,12 +1,12 @@
 import React from 'react'
 import './App.css'
-import { Counter } from './features/counter/Counter'
+import { MeditationTable } from './features/meditation/MeditationTable'
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <Counter />
+        <MeditationTable />
       </header>
     </div>
   )
