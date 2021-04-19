@@ -2,16 +2,14 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
 import { Provider } from 'react-redux'
-import { createStore } from 'redux'
 import App from './App'
-import { counterSlice } from './features/counter/counterSlice'
 import store from './app/store'
+import { fetchPublicMeditations } from './features/meditation/meditationService'
 
-export interface RootState {
-
-}
-
-
+const meditations = fetchPublicMeditations()
+  .then((meditations) => {
+    console.log(meditations)
+  })
 
 ReactDOM.render(
   <React.StrictMode>
