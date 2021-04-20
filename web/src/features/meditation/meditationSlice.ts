@@ -44,6 +44,7 @@ export const fetchPublicMeditationsThunk = (): ThunkAction<void, RootState, unkn
 export const { setIsLoading, setMeditations } = meditationsSlice.actions
 
 export const selectPublicMeditations = (state: RootState) => state.meditation.public.meditations
+export const selectCurrentMeditation = (state: RootState) => state.meditation.public.meditations[0] || null
 export const selectIsPublicMeditationsLoading = (state: RootState) => state.meditation.public.isMeditationsLoading
 
 export default meditationsSlice.reducer
