@@ -9,9 +9,7 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import Toolbar from '@material-ui/core/Toolbar';
 import List from '@material-ui/core/List';
-import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import About from "./features/about/About";
 import { MeditationTimer } from "./features/meditation/MeditationTimer";
@@ -22,6 +20,9 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       flexGrow: 1,
+      position: 'absolute',
+      height: '100%',
+      width: "100%"
     },
     menuButton: {
       marginRight: theme.spacing(2),
@@ -30,7 +31,8 @@ const useStyles = makeStyles((theme: Theme) =>
       flexGrow: 1,
     },
     toolbar: {
-      background: theme.palette.grey[900]
+      background: theme.palette.grey[900],
+      marginBottom: 20
     },
     list: {
       width: 300,
@@ -56,12 +58,13 @@ function App() {
           <IconButton edge="start" className={classes.menuButton} aria-label="menu" onClick={toggleDrawer}><MenuIcon /></IconButton>
           <Drawer open={isDrawerOpen} onClose={toggleDrawer}>
             <List className={classes.list}>
-              <ListItem><ListItemText><Button component={RouterLink} to="/">Home</Button></ListItemText></ListItem>
-              <ListItem><ListItemText><Button component={RouterLink} to="/meditations">Meditations</Button></ListItemText></ListItem>
-              <ListItem><ListItemText><Button component={RouterLink} to="/about">About</Button></ListItemText></ListItem>
+              <ListItem><ListItemText><Button component={RouterLink} to="/" onClick={() => toggleDrawer()}>Home</Button></ListItemText></ListItem>
+              <ListItem><ListItemText><Button component={RouterLink} to="/meditations" onClick={() => toggleDrawer()}>Meditations</Button></ListItemText></ListItem>
+              <ListItem><ListItemText><Button component={RouterLink} to="/about" onClick={() => toggleDrawer()}>About</Button></ListItemText></ListItem>
               </List>
           </Drawer>
         </Toolbar>
+        </AppBar>
         <Container className={classes.container}>
       <Switch>
         <Route path="/about">
@@ -75,7 +78,7 @@ function App() {
         </Route>
       </Switch>
       </Container>
-      </AppBar>
+
       </div>
     </Router>
   );
