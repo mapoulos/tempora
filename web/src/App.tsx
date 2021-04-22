@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     container: {
       maxWidth: 1000,
+      height: "100vh"
     }
   }),
 );
@@ -53,7 +54,7 @@ function App() {
   return (
     <Router>
       <div className={classes.root}>
-      <AppBar position="static" className={classes.toolbar}>
+      <AppBar position="fixed" className={classes.toolbar}>
         <Toolbar>
           <IconButton edge="start" className={classes.menuButton} aria-label="menu" onClick={toggleDrawer}><MenuIcon /></IconButton>
           <Drawer open={isDrawerOpen} onClose={toggleDrawer}>

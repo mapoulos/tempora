@@ -1,16 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useSwipeable } from "react-swipeable";
 import {
   selectCurrentMeditation,
+  selectPublicMeditations,
   selectSessionLength,
+  setCurrentMeditation,
+  setSessionLengthInMilliseconds,
+  updateSessionLength,
 } from "./meditationSlice";
-import {
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-} from "@material-ui/core";
+import { Button, Card, CardContent, Grid, Typography } from "@material-ui/core";
 import Container from "@material-ui/core/Container";
 import { makeStyles, Theme } from "@material-ui/core/styles";
 import { createStyles } from "@material-ui/core/styles";
@@ -19,15 +18,12 @@ import StopIcon from "@material-ui/icons/Stop";
 import PauseIcon from "@material-ui/icons/Pause";
 import { Duration } from "luxon";
 import { Meditation } from "./meditationService";
+import store from "../../app/store";
 import bell from "../../audio/ship_bell_mono.mp3";
 // import Container from "@material-ui/core/Container";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    container: {
-      flexGrow: 1,
-      minHeight: "100vh",
-    },
     timerRow: {
       display: "flex",
       justifyContent: "center",
@@ -42,17 +38,16 @@ const useStyles = makeStyles((theme: Theme) =>
     gridContainer: {
       alignContent: "center",
       justifyContent: "center",
-      flexGrow: 1,
-      minHeight: "90vh",
+      height: "100vh",
     },
     meditationHeader: {
       textAlign: "center",
-      marginBottom: 20
+      marginBottom: 20,
     },
     meditationText: {
       textAlign: "center",
       fontStyle: "italic",
-      marginBottom: 20
+      marginBottom: 20,
     },
   })
 );
@@ -61,6 +56,12 @@ export function MeditationTimer() {
   const currentMeditation: null | Meditation = useSelector(
     selectCurrentMeditation
   );
+  const meditations = useSelector(selectPublicMeditations);
+  const meditationToIndexMap = meditations.reduce((accumulator, m, i) => {
+    accumulator[m._id] = i;
+    return accumulator;
+  }, {} as Record<string, number>);
+
   const sessionLength = useSelector(selectSessionLength);
   const [timeRemaining, setTimeRemaining] = useState(sessionLength);
 
@@ -77,17 +78,17 @@ export function MeditationTimer() {
 
   const playBellAndMeditation = () => {
     // reset time, clear the event listeners
-    bellAudioRef.current.currentTime = 0
-    meditationAudioRef.current.currentTime = 0
-    bellAudioRef.current.onended = () => {}
-    meditationAudioRef.current.onended = () => {}
+    bellAudioRef.current.currentTime = 0;
+    meditationAudioRef.current.currentTime = 0;
+    bellAudioRef.current.onended = () => {};
+    meditationAudioRef.current.onended = () => {};
 
     // play the chain and cue up the bell -> meditation -> bell sequence
     bellAudioRef.current.play();
     bellAudioRef.current.onended = () => {
       meditationAudioRef.current.onended = () => {
         bellAudioRef.current.onended = () => {
-          setIsAudioPlaying(false)
+          setIsAudioPlaying(false);
         };
         bellAudioRef.current.play();
       };
@@ -136,7 +137,10 @@ export function MeditationTimer() {
         .toMillis();
 
       //initiate final meditation and bell
-      if (!isAudioPlaying && newTime <= 1000*(bellDuration * 2 + meditationDuration)) {
+      if (
+        !isAudioPlaying &&
+        newTime <= 1000 * (bellDuration * 2 + meditationDuration)
+      ) {
         setIsAudioPlaying(true);
         // playBellAndMeditation();
       }
@@ -157,14 +161,117 @@ export function MeditationTimer() {
     };
   });
 
+  const updateSessionLengthAndTimeRemaining = (duration: number) => {
+    if (
+      duration < Duration.fromObject({ minutes: 5 }).toMillis() ||
+      duration > Duration.fromObject({ hour: 1 }).toMillis()
+    ) {
+      return;
+    }
+    store.dispatch(updateSessionLength(duration));
+    setTimeRemaining(duration);
+  };
+
+  const addFiveMinutesToSession = () => {
+    const newDuration = Duration.fromMillis(sessionLength)
+      .plus(Duration.fromObject({ minutes: 5 }))
+      .toMillis();
+    updateSessionLengthAndTimeRemaining(newDuration);
+  };
+
+  const subtractFiveMinutesToSession = () => {
+    const newDuration = Duration.fromMillis(sessionLength)
+      .minus(Duration.fromObject({ minutes: 5 }))
+      .toMillis();
+    updateSessionLengthAndTimeRemaining(newDuration);
+  };
+
+  const shiftMeditationRight = () => {
+    if (currentMeditation === null) {
+      return;
+    }
+    const currentMeditationIndex = meditationToIndexMap[currentMeditation._id];
+    const nextMeditationIndex =
+      currentMeditationIndex < meditations.length - 1
+        ? currentMeditationIndex + 1
+        : 0;
+    const nextMeditation = meditations[nextMeditationIndex];
+    store.dispatch(setCurrentMeditation(nextMeditation));
+  };
+
+  const shiftMeditationLeft = () => {
+    if (currentMeditation === null) {
+      return;
+    }
+    const currentMeditationIndex = meditationToIndexMap[currentMeditation._id];
+    const nextMeditationIndex =
+      currentMeditationIndex > 0
+        ? currentMeditationIndex - 1
+        : meditations.length - 1;
+    const nextMeditation = meditations[nextMeditationIndex];
+    store.dispatch(setCurrentMeditation(nextMeditation));
+  };
+
+  // key listeners
+  useEffect(() => {
+    const keyUpListener = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case "ArrowUp":
+          if (isTimerRunning) {
+            break;
+          }
+          addFiveMinutesToSession();
+          break;
+        case "ArrowDown":
+          if (isTimerRunning) {
+            break;
+          }
+          subtractFiveMinutesToSession();
+          break;
+        case "ArrowRight":
+          if (isTimerRunning) {
+            break;
+          }
+          shiftMeditationRight();
+          break;
+        case "ArrowLeft":
+          if (isTimerRunning) {
+            break;
+          }
+          shiftMeditationLeft();
+          break;
+      }
+    };
+    window.addEventListener("keyup", keyUpListener);
+
+    return () => window.removeEventListener("keyup", keyUpListener);
+  }, [sessionLength, currentMeditation]);
+
+  // swipe handlers
+  const handlers = useSwipeable({
+    onSwipedLeft: () => {
+      shiftMeditationRight();
+    },
+    onSwipedRight: () => {
+      shiftMeditationLeft();
+    },
+    onSwipedUp: () => {
+      addFiveMinutesToSession();
+    },
+    onSwipedDown: () => {
+      subtractFiveMinutesToSession();
+    },
+    preventDefaultTouchmoveEvent: true,
+  });
+
   const toggleIsPlaying = () => {
     setStopPressed(false);
     if (isAudioPlaying) {
-      setIsAudioPlaying(false)
-      setIsTimerRunning(false)
+      setIsAudioPlaying(false);
+      setIsTimerRunning(false);
     } else {
-      setIsAudioPlaying(true)
-      setIsTimerRunning(true)
+      setIsAudioPlaying(true);
+      setIsTimerRunning(true);
     }
   };
 
@@ -180,57 +287,50 @@ export function MeditationTimer() {
     return <div></div>;
   }
   return (
-    <Container>
-      <Grid container spacing={2} className={classes.gridContainer}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Grid item xs={12}>
-                <Typography variant="h6" className={classes.meditationHeader}>
-                  {currentMeditation.name}
-                </Typography>
-                <Typography paragraph={true} className={classes.meditationText}>
-                  {currentMeditation.text}
+    <Grid container spacing={2} {...handlers} className={classes.gridContainer}>
+      <Grid item xs={12} md={6}>
+        <Card>
+          <CardContent>
+            <Grid item xs={12}>
+              <Typography variant="h6" className={classes.meditationHeader}>
+                {currentMeditation.name}
+              </Typography>
+              <Typography paragraph={true} className={classes.meditationText}>
+                {currentMeditation.text}
+              </Typography>
+            </Grid>
+            <Grid container spacing={2} className={classes.timerRow}>
+              <Grid item className={classes.timerItem}>
+                <Button
+                  variant="contained"
+                  className={classes.timerButtons}
+                  onClick={() => {
+                    setTimeRemaining(sessionLength);
+                    onStop();
+                  }}
+                >
+                  <StopIcon />
+                </Button>
+              </Grid>
+              <Grid item className={classes.timerItem}>
+                <Typography className={classes.timerItem} variant="h4">
+                  {Duration.fromMillis(timeRemaining).toFormat("mm:ss")}
                 </Typography>
               </Grid>
-              <Grid
-                container
-                spacing={2}
-                style={{ border: "10px" }}
-                className={classes.timerRow}
-              >
-                <Grid item className={classes.timerItem}>
-                  <Button
-                    variant="contained"
-                    className={classes.timerButtons}
-                    onClick={() => {
-                      setTimeRemaining(sessionLength);
-                      onStop();
-                    }}
-                  >
-                    <StopIcon />
-                  </Button>
-                </Grid>
-                <Grid item className={classes.timerItem}>
-                  <Typography className={classes.timerItem} variant="h4">
-                    {Duration.fromMillis(timeRemaining).toFormat("mm:ss")}
-                  </Typography>
-                </Grid>
 
-                <Grid item className={classes.timerRow}>
-                  <Button
-                    variant="contained"
-                    className={classes.timerButtons}
-                    onClick={toggleIsPlaying}
-                  >
-                    {isAudioPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                  </Button>
-                </Grid>
+              <Grid item className={classes.timerRow}>
+                <Button
+                  variant="contained"
+                  className={classes.timerButtons}
+                  onClick={toggleIsPlaying}
+                >
+                  {isAudioPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                </Button>
               </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
       </Grid>
-    </Container>
+    </Grid>
   );
 }
