@@ -20,7 +20,7 @@ const initialState: MeditationState = {
 		isMeditationsLoading: true,
 	},
 	session: {
-		length: Duration.fromObject({seconds: 42}).toMillis()
+		length: Duration.fromObject({minutes: 20}).toMillis()
 	}
 }
 

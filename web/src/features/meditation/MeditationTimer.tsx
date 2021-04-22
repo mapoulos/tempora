@@ -7,7 +7,6 @@ import {
 import {
   Button,
   Card,
-  CardActions,
   CardContent,
   Grid,
   Typography,
@@ -39,19 +38,21 @@ const useStyles = makeStyles((theme: Theme) =>
     timerButtons: {
       padding: 10,
       marginLeft: 10,
-      marginTop: 0,
     },
     gridContainer: {
       alignContent: "center",
+      justifyContent: "center",
       flexGrow: 1,
       minHeight: "90vh",
     },
     meditationHeader: {
       textAlign: "center",
+      marginBottom: 20
     },
     meditationText: {
       textAlign: "center",
       fontStyle: "italic",
+      marginBottom: 20
     },
   })
 );
@@ -181,7 +182,7 @@ export function MeditationTimer() {
   return (
     <Container>
       <Grid container spacing={2} className={classes.gridContainer}>
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Grid item xs={12}>
