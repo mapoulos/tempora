@@ -39,7 +39,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     container: {
       maxWidth: 1000,
-      height: "100vh"
+      height: "100%"
     }
   }),
 );
