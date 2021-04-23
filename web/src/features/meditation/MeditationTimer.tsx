@@ -303,6 +303,7 @@ export function MeditationTimer() {
               <Grid item className={classes.timerItem}>
                 <Button
                   variant="contained"
+                  aria-label="stop"
                   className={classes.timerButtons}
                   onClick={() => {
                     setTimeRemaining(sessionLength);
@@ -322,6 +323,7 @@ export function MeditationTimer() {
                 <Button
                   variant="contained"
                   className={classes.timerButtons}
+                  aria-label="Play/Pause"
                   onClick={toggleIsPlaying}
                 >
                   {isAudioPlaying ? <PauseIcon /> : <PlayArrowIcon />}
