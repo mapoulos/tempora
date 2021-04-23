@@ -245,7 +245,7 @@ export function MeditationTimer() {
     window.addEventListener("keyup", keyUpListener);
 
     return () => window.removeEventListener("keyup", keyUpListener);
-  }, [sessionLength, currentMeditation]);
+  }, [sessionLength, currentMeditation, isTimerRunning]);
 
   // swipe handlers
   const handlers = useSwipeable({

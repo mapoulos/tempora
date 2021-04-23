@@ -1,28 +1,43 @@
-import { Box, Card, CardContent, CardHeader, IconButton, Drawer, Link, Button, Container} from "@material-ui/core";
+import {
+  IconButton,
+  Drawer,
+  Button,
+  Container,
+  Typography,
+  Hidden,
+  WithWidth,
+  isWidthUp,
+  CssBaseline,
+} from "@material-ui/core";
 
 import React, { useState } from "react";
 import "./App.css";
 import { MeditationTable } from "./features/meditation/MeditationTable";
 import { AppBar } from "@material-ui/core";
-import { BrowserRouter as Router, Switch, Route, Link as RouterLink } from "react-router-dom";
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import MenuIcon from '@material-ui/icons/Menu';
-import Toolbar from '@material-ui/core/Toolbar';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link as RouterLink,
+} from "react-router-dom";
+import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
+import MenuIcon from "@material-ui/icons/Menu";
+import Toolbar from "@material-ui/core/Toolbar";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemText from "@material-ui/core/ListItemText";
 import About from "./features/about/About";
 import { MeditationTimer } from "./features/meditation/MeditationTimer";
-
-
+import withWidth from "@material-ui/core/withWidth";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       flexGrow: 1,
-      position: 'absolute',
-      height: '100%',
-      width: "100%"
+      position: "absolute",
+      display: "flex",
+      height: "100%",
+      width: "100%",
     },
     menuButton: {
       marginRight: theme.spacing(2),
@@ -32,57 +47,131 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     toolbar: {
       background: theme.palette.grey[900],
-      marginBottom: 20
+      // marginBottom: 20,
+      zIndex: theme.zIndex.drawer + 1,
     },
     list: {
       width: 300,
     },
     container: {
-      maxWidth: 1000,
-      height: "100vh"
+      flexGrow: 1,
+      padding: theme.spacing(3)
+    },
+    drawer: {
+      flexShrink: 0,
+      width: 300
+    },
+    drawerContainer: {
+      overflow: 'auto'
+    },
+    content: {
+      flexGrow: 1,
+      padding: theme.spacing(3)
     }
-  }),
+  })
 );
 
-function App() {
+function App(props: WithWidth) {
   const classes = useStyles();
+  const { width } = props;
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
 
-  const [isDrawerOpen, setDrawerOpen] = useState(false)
-
-  const toggleDrawer = () => { isDrawerOpen ? setDrawerOpen(false) : setDrawerOpen(true)}
+  // on medium and higher, have the drawer always open.
+  // on 'sm' and 'xs' use the hamburger icon
+  const drawerVariant = isWidthUp("md", width) ? "permanent" : "temporary";
+  const toggleDrawer = () => {
+    isDrawerOpen ? setDrawerOpen(false) : setDrawerOpen(true);
+  };
 
   return (
     <Router>
       <div className={classes.root}>
-      <AppBar position="fixed" className={classes.toolbar}>
-        <Toolbar>
-          <IconButton edge="start" className={classes.menuButton} aria-label="menu" onClick={toggleDrawer}><MenuIcon /></IconButton>
-          <Drawer open={isDrawerOpen} onClose={toggleDrawer}>
-            <List className={classes.list}>
-              <ListItem><ListItemText><Button component={RouterLink} to="/" onClick={() => toggleDrawer()}>Home</Button></ListItemText></ListItem>
-              <ListItem><ListItemText><Button component={RouterLink} to="/meditations" onClick={() => toggleDrawer()}>Meditations</Button></ListItemText></ListItem>
-              <ListItem><ListItemText><Button component={RouterLink} to="/about" onClick={() => toggleDrawer()}>About</Button></ListItemText></ListItem>
-              </List>
-          </Drawer>
-        </Toolbar>
+        <CssBaseline />
+        <AppBar position="fixed" className={classes.toolbar}>
+          <Toolbar>
+            <Hidden mdUp>
+              <IconButton
+                edge="start"
+                className={classes.menuButton}
+                aria-label="menu"
+                onClick={toggleDrawer}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Hidden>
+            <Typography variant="h6" className={classes.title}>
+              Tempora
+            </Typography>
+            <Button color="inherit">Login</Button>
+          </Toolbar>
         </AppBar>
+        <Drawer
+          variant={drawerVariant}
+          open={isDrawerOpen}
+          onClose={toggleDrawer}
+          className={classes.drawer}
+        >
+          <div className={classes.drawerContainer}>
+          <Toolbar className={classes.toolbar}>
+            <Typography variant="h6" className={classes.title}>
+              Tempora
+            </Typography>
+          </Toolbar>
+          <List className={classes.list}>
+            <ListItem>
+              <ListItemText>
+                <Button
+                  component={RouterLink}
+                  to="/"
+                  onClick={() => toggleDrawer()}
+                >
+                  Home
+                </Button>
+              </ListItemText>
+            </ListItem>
+            <ListItem>
+              <ListItemText>
+                <Button
+                  component={RouterLink}
+                  to="/meditations"
+                  onClick={() => toggleDrawer()}
+                >
+                  Meditations
+                </Button>
+              </ListItemText>
+            </ListItem>
+            <ListItem>
+              <ListItemText>
+                <Button
+                  component={RouterLink}
+                  to="/about"
+                  onClick={() => toggleDrawer()}
+                >
+                  About
+                </Button>
+              </ListItemText>
+            </ListItem>
+          </List>
+          </div>
+        </Drawer>
+        {/* <main className={classes.content}> */}
         <Container className={classes.container}>
-      <Switch>
-        <Route path="/about">
-          <About />
-        </Route>
-        <Route path="/meditations">
-          <MeditationTable />
-        </Route>
-        <Route path="/">
-          <MeditationTimer />
-        </Route>
-      </Switch>
-      </Container>
-
+          <Switch>
+            <Route path="/about">
+              <About />
+            </Route>
+            <Route path="/meditations">
+              <MeditationTable />
+            </Route>
+            <Route path="/">
+              <MeditationTimer />
+            </Route>
+          </Switch>
+        </Container>
+        {/* </main> */}
       </div>
     </Router>
   );
 }
 
-export default App;
+export default withWidth()(App);

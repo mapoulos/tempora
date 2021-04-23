@@ -1,6 +1,5 @@
 import { AnyAction, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../app/store";
-import store from "../../app/store";
 import { fetchPublicMeditations, Meditation } from "./meditationService";
 import { ThunkAction } from "redux-thunk";
 import { Duration } from "luxon";
