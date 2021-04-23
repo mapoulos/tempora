@@ -23,11 +23,12 @@ frameworkVersion: "2"
 provider:
   name: aws
   runtime: go1.x
-  lambdaHashingVersion: 20201221
+  # lambdaHashingVersion: 20201221
   environment:
     DOMAIN_SUFFIX: tempora-kairos
 
   httpApi:
+    cors: true
     authorizers:
       serviceAuthorizer:
         identitySource: $request.header.Authorization
@@ -40,27 +41,30 @@ provider:
               - Ref: UserPool
         audience:
           - Ref: UserPoolClient
-    cors:
-      allowedOrigins:
-        - http://localhost:3000
-        - https://tempora.netlify.app
-        - http://192.168.1.51:3000
-      allowedHeaders:
-        - Content-Type
-        - X-Amz-Date
-        - Authorization
-        - X-Api-Key
-        - X-Amz-Security-Token
-        - X-Amz-User-Agent
-      allowedMethods:
-        - GET
-        - PUT
-        - POST
-        - PATCH
-        - DELETE
-        - OPTIONS
-      allowCredentials: true
-      maxAge: 6000
+
+    # cors:
+    #   origin: '*'
+    #   #allowedOrigins:
+    #   #  - http://localhost:3000
+    #   #  - https://tempora.netlify.app
+    #   #  - https://deploy-*tempora.netlify.app
+    #   #  - http://192.168.1.51:3000
+    #   allowedHeaders:
+    #     - Content-Type
+    #     - X-Amz-Date
+    #     - Authorization
+    #     - X-Api-Key
+    #     - X-Amz-Security-Token
+    #     - X-Amz-User-Agent
+    #   allowedMethods:
+    #     - GET
+    #     - PUT
+    #     - POST
+    #     - PATCH
+    #     - DELETE
+    #     - OPTIONS
+    #       #allowCredentials: true
+    #   maxAge: 6000
 
 
 # you can overwrite defaults here
