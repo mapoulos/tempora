@@ -1,5 +1,9 @@
 # README
 
-todos:
-- https://auth0.com/blog/securing-aws-http-apis-with-jwt-authorizers/
-- https://github.com/awsdocs/aws-doc-sdk-examples/blob/master/go/example_code/dynamodb/create_item.go
+**Tempora**, an app for centering prayer. Create and share short meditations.
+
+Backend:
+- golang + DynamoDB, deployed on AWS Lambda + API Gateway
+
+Frontend:
+- react + typescript, with vite as the build tool
