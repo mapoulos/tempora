@@ -167,7 +167,7 @@ export function PrivateMeditationTable() {
           <Typography variant="h6" className={classes.title}>
             My Meditations
           </Typography>
-		  <Button variant="outlined"><AddIcon/></Button>
+		  <Button variant="outlined" component={RouterLink} to="/create-meditation"><AddIcon/></Button>
         </Toolbar>
       </AppBar>
       <Grid container className={classes.selectorGrid} spacing={1}>

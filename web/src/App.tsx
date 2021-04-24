@@ -34,6 +34,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { getIdToken } from "./features/user/userSlice";
 import { useDispatch } from "react-redux";
 import { PrivateMeditationTable } from "./features/meditation/PrivateMeditationTable";
+import { CreateMeditation } from "./features/meditation/CreateMeditation";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -206,6 +207,9 @@ function App(props: WithWidth) {
             </Route>
             <Route path="/private-meditations">
               <PrivateMeditationTable />
+            </Route>
+            <Route path="/create-meditation">
+              <CreateMeditation />
             </Route>
             <Route path="/">
               <MeditationTimer />
