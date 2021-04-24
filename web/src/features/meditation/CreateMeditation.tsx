@@ -1,4 +1,3 @@
-import classes from "*.module.css";
 import {
   makeStyles,
   Theme,
@@ -12,6 +11,9 @@ import {
   Button,
 } from "@material-ui/core";
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { selectIdToken } from "../user/userSlice";
+import { uploadMp3 } from "./meditationService";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -43,16 +45,16 @@ const useStyles = makeStyles((theme: Theme) =>
       width: 400,
       justifyContent: "space-between",
     },
-	selectFileTextField: {
-		flexGrow: 1,
-		width: "100%",
-		paddingBottom: theme.spacing(2),
-		overflow: "hidden"
-	},
-	submitButtonRow: {
-		justifyContent: "flex-end",
-		width: 400
-	},
+    selectFileTextField: {
+      flexGrow: 1,
+      width: "100%",
+      paddingBottom: theme.spacing(2),
+      overflow: "hidden"
+    },
+    submitButtonRow: {
+      justifyContent: "flex-end",
+      width: 400
+    },
     selectFileButton: {
       paddingTop: theme.spacing(1),
     },
@@ -60,12 +62,20 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 export const CreateMeditation = () => {
-  const [audioFile, setAudioFile] = useState("");
+  const [audioFile, setAudioFile] = useState({} as File);
+  const [uploadKey, setUploadKey] = useState("")
+  const idToken = useSelector(selectIdToken)
   const classes = useStyles();
 
-  const handleFileSelection = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const file = (evt.target?.files ?? [])[0] || "";
-    setAudioFile(file.name);
+  const handleFileSelection = async (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const files = evt.target?.files ?? []
+    const file = files[0]
+    
+    if (idToken) {
+      const key = await uploadMp3(file, idToken)
+      setUploadKey(key)
+    }
+    setAudioFile(file);
   };
   return (
     <React.Fragment>
@@ -73,14 +83,15 @@ export const CreateMeditation = () => {
       <Card>
         <CardHeader title="Create Meditation" />
         <CardContent>
+          <div>{uploadKey}</div>
           <form className={classes.formRoot} autoComplete="off">
             <Grid container className={classes.gridContainer}>
               <Grid item className={classes.gridItem} xs={12}>
                 <TextField
                   required
-				  id="meditationNameField"
+                  id="meditationNameField"
                   color="secondary"
-				  variant="outlined"
+                  variant="outlined"
                   label="Meditation Name"
                   className={classes.nameField}
                 ></TextField>
@@ -88,8 +99,8 @@ export const CreateMeditation = () => {
               <Grid item className={classes.gridItem} xs={12}>
                 <TextField
                   required
-				  id="meditationTextField"
-				  variant="outlined"
+                  id="meditationTextField"
+                  variant="outlined"
                   color="secondary"
                   label="Meditation Text"
                   className={classes.meditationTextField}
@@ -99,8 +110,8 @@ export const CreateMeditation = () => {
               </Grid>
               <Grid container className={classes.fileSelectRow}>
                 <Grid item className={classes.gridItem} xs={9}>
-                  <TextField label={audioFile}  InputProps={{ readOnly: true }} id="meditationFileName" className={classes.selectFileTextField}>
-                    {audioFile}
+                  <TextField InputProps={{ readOnly: true }} id="meditationFileName" className={classes.selectFileTextField}>
+                    {audioFile.name || ""}
                   </TextField>
                 </Grid>
                 <Grid item xs={3} className={classes.selectFileButton}>
@@ -114,7 +125,7 @@ export const CreateMeditation = () => {
                   </Button>
                 </Grid>
               </Grid>
-			  <Grid item className={classes.fileSelectRow} xs={12}><Grid container className={classes.submitButtonRow}> <Button size="large" variant="outlined">Submit</Button></Grid></Grid>
+              <Grid item className={classes.fileSelectRow} xs={12}><Grid container className={classes.submitButtonRow}> <Button size="large" variant="outlined">Submit</Button></Grid></Grid>
             </Grid>
           </form>
         </CardContent>
