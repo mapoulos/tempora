@@ -3,7 +3,10 @@ import {
   Card,
   CardContent,
   CardHeader,
+  createStyles,
   Link,
+  makeStyles,
+  Theme,
   Typography,
 } from "@material-ui/core";
 
@@ -11,9 +14,17 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    toolbar: theme.mixins.toolbar,
+  })
+);
+
 export default () => {
+  const classes = useStyles()
   return (
     <div>
+      <div className={classes.toolbar} />
       <Card>
         <CardHeader title="About" />
         <CardContent>
