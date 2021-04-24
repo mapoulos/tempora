@@ -10,7 +10,7 @@ import {
   CssBaseline,
 } from "@material-ui/core";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import { MeditationTable } from "./features/meditation/MeditationTable";
 import { AppBar } from "@material-ui/core";
@@ -22,6 +22,7 @@ import {
 } from "react-router-dom";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import MenuIcon from "@material-ui/icons/Menu";
+import AccountCircle from "@material-ui/icons/AccountCircle";
 import Toolbar from "@material-ui/core/Toolbar";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
@@ -29,6 +30,10 @@ import ListItemText from "@material-ui/core/ListItemText";
 import About from "./features/about/About";
 import { MeditationTimer } from "./features/meditation/MeditationTimer";
 import withWidth from "@material-ui/core/withWidth";
+import { useAuth0 } from "@auth0/auth0-react";
+import { getIdToken } from "./features/user/userSlice";
+import { useDispatch } from "react-redux";
+import { PrivateMeditationTable } from "./features/meditation/PrivateMeditationTable";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -55,19 +60,19 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     container: {
       flexGrow: 1,
-      padding: theme.spacing(3)
+      padding: theme.spacing(3),
     },
     drawer: {
       flexShrink: 0,
-      width: 300
+      width: 300,
     },
     drawerContainer: {
-      overflow: 'auto'
+      overflow: "auto",
     },
     content: {
       flexGrow: 1,
-      padding: theme.spacing(3)
-    }
+      padding: theme.spacing(3),
+    },
   })
 );
 
@@ -75,6 +80,17 @@ function App(props: WithWidth) {
   const classes = useStyles();
   const { width } = props;
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const dispatch = useDispatch();
+  const {
+    isAuthenticated,
+    user,
+    loginWithRedirect,
+    getIdTokenClaims,
+  } = useAuth0();
+
+  useEffect(() => {
+    dispatch(getIdToken(getIdTokenClaims));
+  }, [isAuthenticated, user]);
 
   // on medium and higher, have the drawer always open.
   // on 'sm' and 'xs' use the hamburger icon
@@ -82,6 +98,8 @@ function App(props: WithWidth) {
   const toggleDrawer = () => {
     isDrawerOpen ? setDrawerOpen(false) : setDrawerOpen(true);
   };
+
+  const email = user?.email ?? "";
 
   return (
     <Router>
@@ -102,7 +120,19 @@ function App(props: WithWidth) {
             <Typography variant="h6" className={classes.title}>
               Tempora
             </Typography>
-            <Button color="inherit">Login</Button>
+            {isAuthenticated ? (
+              <IconButton
+                edge="end"
+                area-label="account of current user"
+                aria-haspopup="true"
+              >
+                <AccountCircle />
+              </IconButton>
+            ) : (
+              <Button color="inherit" onClick={() => loginWithRedirect()}>
+                Login
+              </Button>
+            )}
           </Toolbar>
         </AppBar>
         <Drawer
@@ -112,46 +142,57 @@ function App(props: WithWidth) {
           className={classes.drawer}
         >
           <div className={classes.drawerContainer}>
-          <Toolbar className={classes.toolbar}>
-            <Typography variant="h6" className={classes.title}>
-              Tempora
-            </Typography>
-          </Toolbar>
-          <List className={classes.list}>
-            <ListItem>
-              <ListItemText>
-                <Button
-                  component={RouterLink}
-                  to="/"
-                  onClick={() => toggleDrawer()}
-                >
-                  Home
-                </Button>
-              </ListItemText>
-            </ListItem>
-            <ListItem>
-              <ListItemText>
-                <Button
-                  component={RouterLink}
-                  to="/meditations"
-                  onClick={() => toggleDrawer()}
-                >
-                  Meditations
-                </Button>
-              </ListItemText>
-            </ListItem>
-            <ListItem>
-              <ListItemText>
-                <Button
-                  component={RouterLink}
-                  to="/about"
-                  onClick={() => toggleDrawer()}
-                >
-                  About
-                </Button>
-              </ListItemText>
-            </ListItem>
-          </List>
+            <Toolbar className={classes.toolbar}>
+              <Typography variant="h6" className={classes.title}>
+                Tempora
+              </Typography>
+            </Toolbar>
+            <List className={classes.list}>
+              <ListItem>
+                <ListItemText>
+                  <Button
+                    component={RouterLink}
+                    to="/"
+                    onClick={() => toggleDrawer()}
+                  >
+                    Home
+                  </Button>
+                </ListItemText>
+              </ListItem>
+              <ListItem>
+                <ListItemText>
+                  <Button
+                    component={RouterLink}
+                    to="/meditations"
+                    onClick={() => toggleDrawer()}
+                  >
+                    Meditations
+                  </Button>
+                </ListItemText>
+              </ListItem>
+              <ListItem>
+                <ListItemText>
+                  <Button
+                    component={RouterLink}
+                    to="/private-meditations"
+                    onClick={() => toggleDrawer()}
+                  >
+                    My Meditations
+                  </Button>
+                </ListItemText>
+              </ListItem>
+              <ListItem>
+                <ListItemText>
+                  <Button
+                    component={RouterLink}
+                    to="/about"
+                    onClick={() => toggleDrawer()}
+                  >
+                    About
+                  </Button>
+                </ListItemText>
+              </ListItem>
+            </List>
           </div>
         </Drawer>
         {/* <main className={classes.content}> */}
@@ -162,6 +203,9 @@ function App(props: WithWidth) {
             </Route>
             <Route path="/meditations">
               <MeditationTable />
+            </Route>
+            <Route path="/private-meditations">
+              <PrivateMeditationTable />
             </Route>
             <Route path="/">
               <MeditationTimer />

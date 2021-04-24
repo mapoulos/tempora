@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  selectIsPublicMeditationsLoading,
-  selectPublicMeditations,
+  fetchPrivateMeditationsThunk,
+  selectIsPrivateMeditationsLoading,
+  selectPrivateMeditations,
   setCurrentMeditation,
 } from "./meditationSlice";
 import {
@@ -20,10 +21,14 @@ import {
   Typography,
   Box,
   AppBar,
+  Toolbar,
 } from "@material-ui/core";
+import AddIcon from '@material-ui/icons/Add';
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { Link as RouterLink } from "react-router-dom";
 import { Meditation } from "./meditationService";
+import { selectIdToken } from "../user/userSlice";
+import { IdToken, useAuth0 } from "@auth0/auth0-react";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -44,7 +49,20 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     indicator: {
       background: "white",
-      color: "white"
+      color: "white",
+    },
+    header: {
+      marginBottom: 3,
+      //  background: theme.palette.primary.dark,
+      //  background: theme.palette.grey[700],
+      padding: 10,
+      textAlign: "center",
+    },
+    appBar: {
+      background: theme.palette.grey[600],
+    },
+    title: {
+      flexGrow: 1,
     },
     toolbar: theme.mixins.toolbar,
   })
@@ -76,20 +94,32 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-export function MeditationTable() {
-  const isLoading = useSelector(selectIsPublicMeditationsLoading);
-  const publicMeditations = useSelector(selectPublicMeditations);
+export function PrivateMeditationTable() {
+  const isLoading = useSelector(selectIsPrivateMeditationsLoading);
+  const privateMeditations = useSelector(selectPrivateMeditations);
+  const idToken = useSelector(selectIdToken);
+  const { isAuthenticated } = useAuth0();
   const dispatch = useDispatch();
-  const [value, setValue] = useState(0)
+  const [value, setValue] = useState(0);
   const classes = useStyles();
+
+  useEffect(() => {
+	if (!isAuthenticated) { return; }
+    if (idToken === undefined) {
+      console.error(
+        "idToken == undefined. We're really not expecting this to happen."
+      );
+    }
+    dispatch(fetchPrivateMeditationsThunk(idToken as IdToken));
+  }, [isAuthenticated]);
 
   const chooseMeditation = (meditation: Meditation) => {
     dispatch(setCurrentMeditation(meditation));
   };
 
   const handleTabChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    setValue(newValue)
-  }
+    setValue(newValue);
+  };
 
   if (isLoading) {
     return (
@@ -101,7 +131,16 @@ export function MeditationTable() {
     );
   }
 
-  const meditationCards = publicMeditations.map((m) => (
+  if (!isAuthenticated) {
+    return (
+      <React.Fragment>
+        <div className={classes.toolbar} />
+        <Typography>Please login to view your personal meditations.</Typography>
+      </React.Fragment>
+    );
+  }
+
+  const meditationCards = privateMeditations.map((m) => (
     <Grid item xs={12} md={12} key={m._id}>
       <Card>
         <CardHeader title={m.name} />
@@ -123,22 +162,17 @@ export function MeditationTable() {
     // <Paper square>
     <React.Fragment>
       <div className={classes.toolbar} />
-      <AppBar position="static" color="inherit">
-      <Tabs value={value} classes={{indicator: classes.indicator}} onChange={handleTabChange}>
-        <Tab label="Public Meditations"></Tab>
-        <Tab label="Personal Meditations"></Tab>
-      </Tabs>
+      <AppBar position="static" className={classes.appBar}>
+        <Toolbar style={{ flexGrow: 1 }}>
+          <Typography variant="h6" className={classes.title}>
+            My Meditations
+          </Typography>
+		  <Button variant="outlined"><AddIcon/></Button>
+        </Toolbar>
       </AppBar>
-      <TabPanel value={value} index={0}>
       <Grid container className={classes.selectorGrid} spacing={1}>
         {meditationCards}
       </Grid>
-      </TabPanel>
-      <TabPanel value={value} index={1}>
-      <Grid container className={classes.selectorGrid} spacing={1}>
-        {meditationCards}
-      </Grid>
-      </TabPanel>
-      </React.Fragment>
+    </React.Fragment>
   );
 }

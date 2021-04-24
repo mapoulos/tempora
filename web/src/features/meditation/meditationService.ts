@@ -1,39 +1,55 @@
-import {DateTime} from 'luxon'
+import { IdToken } from "@auth0/auth0-spa-js";
+import { DateTime } from "luxon";
 
 const base = import.meta.env.VITE_BACKEND_URL_BASE;
 
 export type Meditation = {
-	_createdAt: number,
-	_id: string,
-	_updatedAt: number,
-	_userId: string,
-	audioUrl: string,
-	isPublic: boolean,
-	name: string,
-	text: string,
-}
+  _createdAt: number;
+  _id: string;
+  _updatedAt: number;
+  _userId: string;
+  audioUrl: string;
+  isPublic: boolean;
+  name: string;
+  text: string;
+};
 
 export type MeditationDTO = {
-	_createdAt: string,
-	_id: string,
-	_updatedAt: string,
-	_userId: string,
-	audioUrl: string,
-	isPublic: boolean,
-	name: string,
-	text: string,
-}
+  _createdAt: string;
+  _id: string;
+  _updatedAt: string;
+  _userId: string;
+  audioUrl: string;
+  isPublic: boolean;
+  name: string;
+  text: string;
+};
 
 const mapDTOToMeditation = (m: MeditationDTO): Meditation => ({
-	...m,
-	_createdAt: DateTime.fromISO(m._createdAt).toMillis(),
-	_updatedAt: DateTime.fromISO(m._updatedAt).toMillis()
-})
+  ...m,
+  _createdAt: DateTime.fromISO(m._createdAt).toMillis(),
+  _updatedAt: DateTime.fromISO(m._updatedAt).toMillis(),
+});
 
 export const fetchPublicMeditations = async (): Promise<Meditation[]> => {
-	return fetch(`${base}/public/meditations`)
-		.then((resp) => resp.json())
-		.then((meditations: Array<MeditationDTO>) => {
-			return meditations.map((m) => mapDTOToMeditation(m))
-		})
-}
+  return fetch(`${base}/public/meditations`)
+    .then((resp) => resp.json())
+    .then((meditations: Array<MeditationDTO>) => {
+      return meditations.map((m) => mapDTOToMeditation(m));
+    });
+};
+
+export const fetchPrivateMeditations = async (
+  token: IdToken
+): Promise<Meditation[]> => {
+  const rawToken = token.__raw;
+  return fetch(`${base}/meditations`, {
+    headers: {
+      Authorization: rawToken,
+    },
+  })
+    .then((resp) => resp.json())
+    .then((meditations: Array<MeditationDTO>) => {
+      return meditations.map((m) => mapDTOToMeditation(m));
+    });
+};

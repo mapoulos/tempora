@@ -32,15 +32,8 @@ provider:
     authorizers:
       serviceAuthorizer:
         identitySource: $request.header.Authorization
-        issuerUrl:
-          Fn::Join:
-            - ""
-            - - "https://cognito-idp."
-              - "${opt:region, self:provider.region}"
-              - ".amazonaws.com/"
-              - Ref: UserPool
-        audience:
-          - Ref: UserPoolClient
+        issuerUrl: https://equulus.us.auth0.com/
+        audience: "a45HOOQ5VyDf2mf4V0oC5hXXClfjR1P1"
 
     # cors:
     #   origin: '*'
