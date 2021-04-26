@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectIsPublicMeditationsLoading,
@@ -13,13 +13,7 @@ import {
   CardHeader,
   CircularProgress,
   Grid,
-  Paper,
-  Tabs,
-  Tab,
   Theme,
-  Typography,
-  Box,
-  AppBar,
 } from "@material-ui/core";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { Link as RouterLink } from "react-router-dom";
@@ -44,52 +38,21 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     indicator: {
       background: "white",
-      color: "white"
+      color: "white",
     },
     toolbar: theme.mixins.toolbar,
   })
 );
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: any;
-  value: any;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box p={3}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
-    </div>
-  );
-}
-
-export function MeditationTable() {
+export function PublicMeditationTable() {
   const isLoading = useSelector(selectIsPublicMeditationsLoading);
   const publicMeditations = useSelector(selectPublicMeditations);
   const dispatch = useDispatch();
-  const [value, setValue] = useState(0)
   const classes = useStyles();
 
   const chooseMeditation = (meditation: Meditation) => {
     dispatch(setCurrentMeditation(meditation));
   };
-
-  const handleTabChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    setValue(newValue)
-  }
 
   if (isLoading) {
     return (
@@ -123,22 +86,10 @@ export function MeditationTable() {
     // <Paper square>
     <React.Fragment>
       <div className={classes.toolbar} />
-      <AppBar position="static" color="inherit">
-      <Tabs value={value} classes={{indicator: classes.indicator}} onChange={handleTabChange}>
-        <Tab label="Public Meditations"></Tab>
-        <Tab label="Personal Meditations"></Tab>
-      </Tabs>
-      </AppBar>
-      <TabPanel value={value} index={0}>
+
       <Grid container className={classes.selectorGrid} spacing={1}>
         {meditationCards}
       </Grid>
-      </TabPanel>
-      <TabPanel value={value} index={1}>
-      <Grid container className={classes.selectorGrid} spacing={1}>
-        {meditationCards}
-      </Grid>
-      </TabPanel>
-      </React.Fragment>
+    </React.Fragment>
   );
 }

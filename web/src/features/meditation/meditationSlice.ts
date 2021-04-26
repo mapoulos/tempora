@@ -4,6 +4,9 @@ import {
   fetchPublicMeditations,
   Meditation,
   fetchPrivateMeditations,
+  createMeditation,
+  CreateMeditationInput,
+  deleteMeditationById,
 } from "./meditationService";
 import { ThunkAction } from "redux-thunk";
 import { Duration } from "luxon";
@@ -61,11 +64,14 @@ const meditationsSlice = createSlice({
   name: "meditation",
   initialState,
   reducers: {
-    setIsLoading: (state, action: PayloadAction<boolean>) => {
+    setIsPublicMeditationsLoading: (state, action: PayloadAction<boolean>) => {
       state.public.isMeditationsLoading = action.payload;
     },
     setPublicMeditations: (state, action: PayloadAction<Meditation[]>) => {
       state.public.meditations = [...action.payload];
+    },
+    setIsPrivateMeditationsLoading: (state, action: PayloadAction<boolean>) => {
+      state.private.isMeditationsLoading = action.payload;
     },
     setPrivateMeditations: (state, action: PayloadAction<Meditation[]>) => {
       state.private.meditations = [...action.payload];
@@ -80,34 +86,53 @@ const meditationsSlice = createSlice({
 });
 
 export const fetchPublicMeditationsThunk = (): ThunkAction<
-  void,
+  Promise<void>,
   RootState,
   unknown,
   AnyAction
 > => async (dispatch) => {
-  try {
     const meditations = await fetchPublicMeditations();
     dispatch(setPublicMeditations(meditations));
     dispatch(setCurrentMeditation(meditations[0]));
-    dispatch(setIsLoading(false));
-  } catch (error) {
-    console.error("Problem loading public meditations");
-    console.error(error);
-  }
+    dispatch(setIsPublicMeditationsLoading(false));
 };
 
 export const fetchPrivateMeditationsThunk = (
   token: IdToken
-): ThunkAction<void, RootState, unknown, AnyAction> => async (dispatch) => {
-  try {
+): ThunkAction<Promise<void>, RootState, unknown, AnyAction> => async (dispatch) => {
     const meditations = await fetchPrivateMeditations(token);
     dispatch(setPrivateMeditations(meditations));
-    dispatch(setCurrentMeditation(meditations[0]));
-    dispatch(setIsLoading(false));
-  } catch (error) {
-    console.error("Problem loading private meditations");
-    console.error(error);
-  }
+    dispatch(setIsPrivateMeditationsLoading(false));
+};
+
+export const createMeditationThunk = (
+  meditation: CreateMeditationInput,
+  idToken: IdToken
+): ThunkAction<Promise<Meditation>, RootState, unknown, AnyAction> => async (
+  dispatch,
+  getState
+): Promise<Meditation> => {
+  const newMeditation = await createMeditation(meditation, idToken);
+  const existingMeditations = getState().meditation.private.meditations;
+  dispatch(setPrivateMeditations([newMeditation, ...existingMeditations]));
+  return newMeditation;
+};
+
+export const deleteMeditationThunk = (
+  meditationId: string,
+  idToken: IdToken
+): ThunkAction<Promise<void>, RootState, unknown, AnyAction> => async (
+  dispatch,
+  getState
+): Promise<void> => {
+  await deleteMeditationById(meditationId, idToken);
+  const existingPrivateMeditations = getState().meditation.private.meditations;
+  const existingPublicMeditations = getState().meditation.public.meditations;
+
+  const newPrivateMeditations = existingPrivateMeditations.filter((m) => m._id !== meditationId)
+  const newPublicMeditations = existingPublicMeditations.filter((m) => m._id !== meditationId)
+  dispatch(setPrivateMeditations(newPrivateMeditations))
+  dispatch(setPublicMeditations(newPublicMeditations))
 };
 
 export const updateSessionLength = (
@@ -120,7 +145,8 @@ export const updateSessionLength = (
 };
 
 export const {
-  setIsLoading,
+  setIsPublicMeditationsLoading,
+  setIsPrivateMeditationsLoading,
   setPublicMeditations,
   setPrivateMeditations,
   setCurrentMeditation,

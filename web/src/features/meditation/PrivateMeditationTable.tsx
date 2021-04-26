@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
+  deleteMeditationThunk,
   fetchPrivateMeditationsThunk,
   selectIsPrivateMeditationsLoading,
   selectPrivateMeditations,
@@ -22,20 +23,27 @@ import {
   Box,
   AppBar,
   Toolbar,
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@material-ui/core";
-import AddIcon from '@material-ui/icons/Add';
+import AddIcon from "@material-ui/icons/Add";
+import DeleteIcon from "@material-ui/icons/Delete";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { Link as RouterLink } from "react-router-dom";
 import { Meditation } from "./meditationService";
 import { selectIdToken } from "../user/userSlice";
 import { IdToken, useAuth0 } from "@auth0/auth0-react";
+import { AppDispatch } from "../../app/store";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     cardActions: {
       flex: 1,
       width: "100%",
-      flexDirection: "row-reverse",
+      justifyContent: "flex-end",
+      flexDirection: "row",
     },
     selectorGrid: {
       alignContent: "center",
@@ -68,43 +76,22 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: any;
-  value: any;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box p={3}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
-    </div>
-  );
-}
-
 export function PrivateMeditationTable() {
   const isLoading = useSelector(selectIsPrivateMeditationsLoading);
   const privateMeditations = useSelector(selectPrivateMeditations);
   const idToken = useSelector(selectIdToken);
   const { isAuthenticated } = useAuth0();
-  const dispatch = useDispatch();
-  const [value, setValue] = useState(0);
-  const classes = useStyles();
+  const dispatch = useDispatch<AppDispatch>();
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedMeditation, setSelectedMeditation] = useState(
+    {} as Meditation
+  );
 
   useEffect(() => {
-	if (!isAuthenticated) { return; }
+    if (!isAuthenticated) {
+      return;
+    }
     if (idToken === undefined) {
       console.error(
         "idToken == undefined. We're really not expecting this to happen."
@@ -117,9 +104,21 @@ export function PrivateMeditationTable() {
     dispatch(setCurrentMeditation(meditation));
   };
 
-  const handleTabChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    setValue(newValue);
+  const handleDeleteDialogClose = (shouldDelete: boolean) => {
+    if (shouldDelete) {
+      dispatch(
+        deleteMeditationThunk(selectedMeditation._id, idToken as IdToken)
+      );
+    }
+    setIsDeleteDialogOpen(false);
   };
+
+  const handleDeleteDialogOpen = (meditation: Meditation) => {
+    setSelectedMeditation(meditation);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const classes = useStyles();
 
   if (isLoading) {
     return (
@@ -147,6 +146,15 @@ export function PrivateMeditationTable() {
         <CardContent>{m.text}</CardContent>
         <CardActions className={classes.cardActions}>
           <Button
+            variant="outlined"
+            onClick={() => {
+              handleDeleteDialogOpen(m);
+            }}
+          >
+            <DeleteIcon />
+          </Button>
+          <Button
+            variant="outlined"
             onClick={() => chooseMeditation(m)}
             component={RouterLink}
             to="/"
@@ -167,12 +175,42 @@ export function PrivateMeditationTable() {
           <Typography variant="h6" className={classes.title}>
             My Meditations
           </Typography>
-		  <Button variant="outlined"><AddIcon/></Button>
+          <Button
+            variant="outlined"
+            component={RouterLink}
+            to="/create-meditation"
+          >
+            <AddIcon />
+          </Button>
         </Toolbar>
       </AppBar>
       <Grid container className={classes.selectorGrid} spacing={1}>
         {meditationCards}
       </Grid>
+      <Dialog open={isDeleteDialogOpen} onClose={handleDeleteDialogClose}>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this meditation? This action{" "}
+            <b>cannot</b> be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => handleDeleteDialogClose(false)}
+            autoFocus
+            variant="contained"
+          >
+            No
+          </Button>
+          <Button
+            onClick={() => handleDeleteDialogClose(true)}
+            color="secondary"
+            variant="contained"
+          >
+            Yes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </React.Fragment>
   );
 }

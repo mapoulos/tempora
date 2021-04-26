@@ -25,6 +25,16 @@ export type MeditationDTO = {
   text: string;
 };
 
+// export type UploadFile = {
+//   uploadKey: string;
+//   uploadUrl: string,
+// }
+
+export type GetUploadUrlResponse = {
+  uploadKey: string;
+  uploadUrl: string;
+};
+
 const mapDTOToMeditation = (m: MeditationDTO): Meditation => ({
   ...m,
   _createdAt: DateTime.fromISO(m._createdAt).toMillis(),
@@ -52,4 +62,62 @@ export const fetchPrivateMeditations = async (
     .then((meditations: Array<MeditationDTO>) => {
       return meditations.map((m) => mapDTOToMeditation(m));
     });
+};
+
+export const uploadMp3 = async (
+  file: File,
+  token: IdToken
+): Promise<string> => {
+  const rawToken = token.__raw;
+  const getUploadUrlResponse = await fetch(`${base}/upload-url`, {
+    headers: {
+      Authorization: rawToken,
+    },
+  });
+  const { uploadUrl, uploadKey } = await getUploadUrlResponse.json();
+
+  await fetch(uploadUrl, {
+    method: "PUT",
+    body: file,
+  });
+
+  return uploadKey;
+};
+
+export interface CreateMeditationInput {
+  uploadKey: string;
+  name: string;
+  text: string;
+  isPublic: boolean;
+}
+
+export const createMeditation = async (
+  input: CreateMeditationInput,
+  token: IdToken
+) => {
+  const createMeditationResponse = await fetch(`${base}/meditations`, {
+    method: "POST",
+    body: JSON.stringify(input),
+    headers: {
+      Authorization: token.__raw,
+    },
+  });
+
+  const meditationDTO = await createMeditationResponse.json();
+  if (createMeditationResponse.status >= 400) {
+	  throw meditationDTO
+  }
+  return mapDTOToMeditation(meditationDTO);
+};
+
+export const deleteMeditationById = async (
+  meditationId: string,
+  token: IdToken
+) => {
+  await fetch(`${base}/meditations/${meditationId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: token.__raw,
+    },
+  });
 };
