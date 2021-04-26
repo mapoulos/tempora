@@ -88,8 +88,14 @@ export const CreateMeditation = () => {
       isPublic: false,
       uploadKey: ""
     },
-    isSubmitEnabled: true
   })
+
+  const isTextFieldValid = (val: string) => {
+    const trimmed = val.trim()
+    return trimmed.length > 0 && trimmed.length < 2000
+  }
+
+  const isSubmitEnabled = isTextFieldValid(state.meditation.name) && isTextFieldValid(state.meditation.text) && isTextFieldValid(state.meditation.uploadKey)
   const classes = useStyles();
 
   const handleNameFieldChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,7 +229,7 @@ export const CreateMeditation = () => {
           </form>
         </CardContent>
         <CardActions className={classes.cardFooter}>
-          <Button disabled={!state.isSubmitEnabled} size="large" variant="outlined" style={{ height: 50 }} onClick={handleSubmit}>
+          <Button disabled={!isSubmitEnabled} size="large" variant="outlined" style={{ height: 50 }} onClick={handleSubmit}>
             Submit
           </Button>
         </CardActions>
