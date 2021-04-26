@@ -12,7 +12,7 @@ import {
 
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { MeditationTable } from "./features/meditation/MeditationTable";
+import { PublicMeditationTable } from "./features/meditation/PublicMeditationTable";
 import { AppBar } from "@material-ui/core";
 import {
   BrowserRouter as Router,
@@ -203,7 +203,7 @@ function App(props: WithWidth) {
               <About />
             </Route>
             <Route path="/meditations">
-              <MeditationTable />
+              <PublicMeditationTable />
             </Route>
             <Route path="/private-meditations">
               <PrivateMeditationTable />
