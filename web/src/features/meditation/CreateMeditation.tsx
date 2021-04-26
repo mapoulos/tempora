@@ -1,4 +1,3 @@
-import classes from "*.module.css";
 import {
   makeStyles,
   Theme,
@@ -16,6 +15,9 @@ import {
   Checkbox,
 } from "@material-ui/core";
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { selectIdToken } from "../user/userSlice";
+import { uploadMp3 } from "./meditationService";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -71,8 +73,9 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 export const CreateMeditation = () => {
-  const [audioFile, setAudioFile] = useState("");
+  const idToken = useSelector(selectIdToken)
   const [state, setState] = useState({
+	  audioFile: {} as File,
     meditation: {
       name: "",
       text: "",
@@ -101,9 +104,23 @@ export const CreateMeditation = () => {
     })
   }
 
-  const handleFileSelection = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const file = (evt.target?.files ?? [])[0] || "";
-    setAudioFile(file.name);
+
+
+  const handleFileSelection = async (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const files = evt.target?.files ?? []
+    const file = files[0]
+
+    if (idToken) {
+      const key = await uploadMp3(file, idToken)
+      setState({
+		  ...state,
+		  audioFile: file,
+		  meditation:{
+			  ...state.meditation,
+			  uploadKey: key
+		  }
+	  })
+    }
   };
 
   const handleIsPublicSelection = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,6 +185,7 @@ export const CreateMeditation = () => {
                     <input
                       type="file"
                       hidden
+                      accept=".mp3"
                       onChange={handleFileSelection}
                     ></input>
                   </Button>
@@ -175,7 +193,7 @@ export const CreateMeditation = () => {
                 <Grid item className={classes.fileSelectRow} xs={10}>
                   <TextField
                     variant="outlined"
-                    label={audioFile}
+                    label={state.audioFile?.name ?? "" }
                     InputProps={{ readOnly: true }}
                     fullWidth={true}
                   />
