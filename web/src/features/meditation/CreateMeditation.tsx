@@ -10,6 +10,10 @@ import {
   TextField,
   Grid,
   Button,
+  Paper,
+  CardActions,
+  FormControlLabel,
+  Checkbox,
 } from "@material-ui/core";
 import React, { useState } from "react";
 
@@ -26,47 +30,92 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     gridItem: {
       flexGrow: 1,
+      spacing: theme.spacing(1)
     },
     nameField: {
       flexGrow: 1,
-      minWidth: 400,
+      // minWidth: 400,
+      // width: "80%",
+      justifyContent: "center",
       paddingBottom: theme.spacing(2),
     },
     meditationTextField: {
       flexGrow: 1,
-      minWidth: 400,
+      // minWidth: 400,
+      // width: "80%",
       paddingBottom: theme.spacing(2),
     },
     toolbar: theme.mixins.toolbar,
     fileSelectRow: {
       // flexGrow: 1,
-      width: 400,
-      justifyContent: "space-between",
+      // width: 400,
+      // justifyContent: "flex-end",
+      paddingBottom: theme.spacing(2),
     },
-	selectFileTextField: {
-		flexGrow: 1,
-		width: "100%",
-		paddingBottom: theme.spacing(2),
-		overflow: "hidden"
-	},
-	submitButtonRow: {
-		justifyContent: "flex-end",
-		width: 400
-	},
+    selectFileTextField: {
+      // flexGrow: 1,
+      paddingBottom: theme.spacing(2),
+      // overflow: "hidden",
+    },
+    submitButtonRow: {
+      justifyContent: "flex-end",
+    },
     selectFileButton: {
       paddingTop: theme.spacing(1),
+    },
+    cardFooter: {
+      justifyContent: "flex-end",
+      padding: theme.spacing(2),
     },
   })
 );
 
 export const CreateMeditation = () => {
   const [audioFile, setAudioFile] = useState("");
+  const [state, setState] = useState({
+    meditation: {
+      name: "",
+      text: "",
+      isPublic: false,
+      uploadKey: ""
+    }
+  })
   const classes = useStyles();
+
+  const handleNameFieldChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    setState({
+      ...state,
+      meditation: {
+        ...state.meditation,
+        name: evt.target.textContent || ""
+      }
+    })
+  }
+  const handleTextFieldChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    setState({
+      ...state,
+      meditation: {
+        ...state.meditation,
+        text: evt.target.textContent || ""
+      }
+    })
+  }
 
   const handleFileSelection = (evt: React.ChangeEvent<HTMLInputElement>) => {
     const file = (evt.target?.files ?? [])[0] || "";
     setAudioFile(file.name);
   };
+
+  const handleIsPublicSelection = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    setState({
+      ...state,
+      meditation: {
+        ...state.meditation,
+        isPublic: evt.target.checked
+      }
+    })
+  };
+
   return (
     <React.Fragment>
       <div className={classes.toolbar} />
@@ -78,34 +127,44 @@ export const CreateMeditation = () => {
               <Grid item className={classes.gridItem} xs={12}>
                 <TextField
                   required
-				  id="meditationNameField"
+                  fullWidth
+                  id="meditationNameField"
                   color="secondary"
-				  variant="outlined"
+                  variant="outlined"
                   label="Meditation Name"
                   className={classes.nameField}
+                  onChange={handleNameFieldChange}
                 ></TextField>
               </Grid>
               <Grid item className={classes.gridItem} xs={12}>
                 <TextField
                   required
-				  id="meditationTextField"
-				  variant="outlined"
+                  fullWidth
+                  id="meditationTextField"
+                  variant="outlined"
                   color="secondary"
                   label="Meditation Text"
+                  onChange={handleTextFieldChange}
                   className={classes.meditationTextField}
                   multiline
                   rows={15}
                 ></TextField>
               </Grid>
-              <Grid container className={classes.fileSelectRow}>
-                <Grid item className={classes.gridItem} xs={9}>
-                  <TextField label={audioFile}  InputProps={{ readOnly: true }} id="meditationFileName" className={classes.selectFileTextField}>
-                    {audioFile}
-                  </TextField>
-                </Grid>
-                <Grid item xs={3} className={classes.selectFileButton}>
-                  <Button size="large" component="label" variant="outlined">
-                    Upload
+              <Grid item className={classes.gridItem} xs={12}>
+                <FormControlLabel control={
+                  <Checkbox checked={state.meditation.isPublic} onChange={handleIsPublicSelection} />
+                } label="Make Public?"  labelPlacement="start"/>
+              </Grid>
+              <Grid container direction="row" justify="flex-end">
+                <Grid item className={classes.fileSelectRow} xs={2}>
+                  <Button
+                    style={{ height: "100%" }}
+                    size="large"
+                    component="label"
+                    variant="outlined"
+                    fullWidth
+                  >
+                    Choose MP3
                     <input
                       type="file"
                       hidden
@@ -113,11 +172,23 @@ export const CreateMeditation = () => {
                     ></input>
                   </Button>
                 </Grid>
+                <Grid item className={classes.fileSelectRow} xs={10}>
+                  <TextField
+                    variant="outlined"
+                    label={audioFile}
+                    InputProps={{ readOnly: true }}
+                    fullWidth={true}
+                  />
+                </Grid>
               </Grid>
-			  <Grid item className={classes.fileSelectRow} xs={12}><Grid container className={classes.submitButtonRow}> <Button size="large" variant="outlined">Submit</Button></Grid></Grid>
             </Grid>
           </form>
         </CardContent>
+        <CardActions className={classes.cardFooter}>
+          <Button size="large" variant="outlined" style={{ height: 50 }}>
+            Submit
+          </Button>
+        </CardActions>
       </Card>
     </React.Fragment>
   );
