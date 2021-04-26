@@ -1,3 +1,4 @@
+import { IdToken } from "@auth0/auth0-spa-js";
 import {
   makeStyles,
   Theme,
@@ -15,9 +16,11 @@ import {
   Checkbox,
 } from "@material-ui/core";
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "../../app/store";
 import { selectIdToken } from "../user/userSlice";
-import { uploadMp3 } from "./meditationService";
+import { CreateMeditationInput, uploadMp3 } from "./meditationService";
+import { createMeditationThunk } from "./meditationSlice";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -73,6 +76,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 export const CreateMeditation = () => {
+  const dispatch = useDispatch<AppDispatch>()
   const idToken = useSelector(selectIdToken)
   const [state, setState] = useState({
 	  audioFile: {} as File,
@@ -81,7 +85,8 @@ export const CreateMeditation = () => {
       text: "",
       isPublic: false,
       uploadKey: ""
-    }
+    },
+    isSubmitEnabled: true
   })
   const classes = useStyles();
 
@@ -90,7 +95,7 @@ export const CreateMeditation = () => {
       ...state,
       meditation: {
         ...state.meditation,
-        name: evt.target.textContent || ""
+        name: evt.target.value || ""
       }
     })
   }
@@ -99,7 +104,7 @@ export const CreateMeditation = () => {
       ...state,
       meditation: {
         ...state.meditation,
-        text: evt.target.textContent || ""
+        text: evt.target.value || ""
       }
     })
   }
@@ -132,6 +137,17 @@ export const CreateMeditation = () => {
       }
     })
   };
+
+  const handleSubmit = async () => {
+    const createMeditationArgs: CreateMeditationInput = state.meditation
+    console.log({createMeditationArgs})
+    try {
+      await dispatch(createMeditationThunk(createMeditationArgs, idToken as IdToken))
+    } catch(error) {
+      console.log("There was a problem!")
+    }
+
+  }
 
   return (
     <React.Fragment>
@@ -203,7 +219,7 @@ export const CreateMeditation = () => {
           </form>
         </CardContent>
         <CardActions className={classes.cardFooter}>
-          <Button size="large" variant="outlined" style={{ height: 50 }}>
+          <Button disabled={!state.isSubmitEnabled} size="large" variant="outlined" style={{ height: 50 }} onClick={handleSubmit}>
             Submit
           </Button>
         </CardActions>

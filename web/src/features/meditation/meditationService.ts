@@ -33,7 +33,7 @@ export type MeditationDTO = {
 export type GetUploadUrlResponse = {
   uploadKey: string;
   uploadUrl: string;
-}
+};
 
 const mapDTOToMeditation = (m: MeditationDTO): Meditation => ({
   ...m,
@@ -64,22 +64,25 @@ export const fetchPrivateMeditations = async (
     });
 };
 
-export const uploadMp3 = async (file: File, token: IdToken): Promise<string> => {
-  const rawToken = token.__raw
+export const uploadMp3 = async (
+  file: File,
+  token: IdToken
+): Promise<string> => {
+  const rawToken = token.__raw;
   const getUploadUrlResponse = await fetch(`${base}/upload-url`, {
     headers: {
-      Authorization: rawToken
-    }
-  })
-  const { uploadUrl, uploadKey } = await getUploadUrlResponse.json()
+      Authorization: rawToken,
+    },
+  });
+  const { uploadUrl, uploadKey } = await getUploadUrlResponse.json();
 
   await fetch(uploadUrl, {
     method: "PUT",
-    body: file
-  })
+    body: file,
+  });
 
-  return uploadKey
-}
+  return uploadKey;
+};
 
 export interface CreateMeditationInput {
   uploadKey: string;
@@ -88,14 +91,29 @@ export interface CreateMeditationInput {
   isPublic: boolean;
 }
 
-export const createMeditation = async (input: CreateMeditationInput, token: IdToken) => {
+export const createMeditation = async (
+  input: CreateMeditationInput,
+  token: IdToken
+) => {
   const createMeditationResponse = await fetch(`${base}/meditations`, {
     method: "POST",
     body: JSON.stringify(input),
     headers: {
-      Authorization: token.__raw
-    }
-  })
-  const meditationDTO = await createMeditationResponse.json()
-  return mapDTOToMeditation(meditationDTO)
-}
+      Authorization: token.__raw,
+    },
+  });
+  const meditationDTO = await createMeditationResponse.json();
+  return mapDTOToMeditation(meditationDTO);
+};
+
+export const deleteMeditationById = async (
+  meditationId: string,
+  token: IdToken
+) => {
+  await fetch(`${base}/meditations/${meditationId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: token.__raw,
+    },
+  });
+};
