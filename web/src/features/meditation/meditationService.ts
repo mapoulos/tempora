@@ -102,7 +102,11 @@ export const createMeditation = async (
       Authorization: token.__raw,
     },
   });
+
   const meditationDTO = await createMeditationResponse.json();
+  if (createMeditationResponse.status >= 400) {
+	  throw meditationDTO
+  }
   return mapDTOToMeditation(meditationDTO);
 };
 

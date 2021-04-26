@@ -17,10 +17,11 @@ import {
 } from "@material-ui/core";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useHistory } from "react-router";
 import { AppDispatch } from "../../app/store";
 import { selectIdToken } from "../user/userSlice";
 import { CreateMeditationInput, uploadMp3 } from "./meditationService";
-import { createMeditationThunk } from "./meditationSlice";
+import { createMeditationThunk, selectCurrentMeditation, setCurrentMeditation } from "./meditationSlice";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -78,6 +79,7 @@ const useStyles = makeStyles((theme: Theme) =>
 export const CreateMeditation = () => {
   const dispatch = useDispatch<AppDispatch>()
   const idToken = useSelector(selectIdToken)
+  const history = useHistory()
   const [state, setState] = useState({
 	  audioFile: {} as File,
     meditation: {
@@ -140,11 +142,13 @@ export const CreateMeditation = () => {
 
   const handleSubmit = async () => {
     const createMeditationArgs: CreateMeditationInput = state.meditation
-    console.log({createMeditationArgs})
     try {
-      await dispatch(createMeditationThunk(createMeditationArgs, idToken as IdToken))
+      const newMeditation = await dispatch(createMeditationThunk(createMeditationArgs, idToken as IdToken))
+      dispatch(setCurrentMeditation(newMeditation))
+      history.push("/")
     } catch(error) {
-      console.log("There was a problem!")
+      console.error("There was a problem creating the meditation")
+      console.error(error)
     }
 
   }
