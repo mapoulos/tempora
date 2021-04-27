@@ -45,6 +45,7 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 
 func main() {
 	validate = validator.New()
+	validate.RegisterValidation("uploadKey", uploadKeyValidator)
 
 	lambda.Start(handler)
 }

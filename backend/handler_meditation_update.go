@@ -27,7 +27,7 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	}
 
 	// Parse and validate the request body
-	newMeditationInput := CreateMeditationInput{}
+	newMeditationInput := UpdateMeditationInput{}
 	err = json.Unmarshal([]byte(req.Body), &newMeditationInput)
 	if err != nil {
 		// couldn't even unmarshal the json
