@@ -115,6 +115,8 @@ export function MeditationTimer() {
     if (!stopPressed) {
       return;
     }
+    bellAudioRef.current.pause()
+    meditationAudioRef.current.pause()
     bellAudioRef.current.currentTime = 0;
     meditationAudioRef.current.currentTime = 0;
   }, [stopPressed]);

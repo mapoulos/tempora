@@ -2,7 +2,10 @@ package main
 
 import (
 	"os"
+	"strings"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type Meditation struct {
@@ -18,10 +21,34 @@ type Meditation struct {
 }
 
 type CreateMeditationInput struct {
-	UploadKey string `json:"uploadKey" validate:"required,startswith=upload/"`
+	UploadKey string `json:"uploadKey" validate:"required,uploadKey"`
 	Name      string `json:"name" validate:"required"`
 	Text      string `json:"text" validate:"required"`
 	Public    bool   `json:"isPublic"`
+}
+
+type UpdateMeditationInput struct {
+	UploadKey string `json:"uploadKey" validate:"uploadKey"`
+	Name      string `json:"name" validate:"required"`
+	Text      string `json:"text" validate:"required"`
+	Public    bool   `json:"isPublic"`
+}
+
+func uploadKeyValidator(fl validator.FieldLevel) bool {
+	uploadKey := fl.Field().String()
+
+	if uploadKey == "" {
+		return true
+	}
+	if strings.Contains(uploadKey, "..") {
+		// directory traversal is bad...
+		return false
+	}
+	if strings.HasPrefix(uploadKey, "upload/") {
+		return true
+	}
+
+	return false
 }
 
 type UploadResponse struct {

@@ -30,6 +30,7 @@ import {
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import DeleteIcon from "@material-ui/icons/Delete";
+import EditIcon from "@material-ui/icons/Edit";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { Link as RouterLink } from "react-router-dom";
 import { Meditation } from "./meditationService";
@@ -147,6 +148,13 @@ export function PrivateMeditationTable() {
         <CardActions className={classes.cardActions}>
           <Button
             variant="outlined"
+            component={RouterLink}
+            to={`/meditations/${m._id}/update`}
+          >
+            <EditIcon />
+          </Button>
+          <Button
+            variant="outlined"
             onClick={() => {
               handleDeleteDialogOpen(m);
             }}
@@ -190,7 +198,7 @@ export function PrivateMeditationTable() {
       <Dialog open={isDeleteDialogOpen} onClose={handleDeleteDialogClose}>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this meditation? This action{" "}
+            Are you sure you want to delete this meditation? This action
             <b>cannot</b> be undone.
           </DialogContentText>
         </DialogContent>
