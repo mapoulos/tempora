@@ -31,7 +31,7 @@ func mp3duration(r io.Reader) (int64, error) {
 }
 
 func isDurationValid(duration int64) bool {
-	if duration > 60 {
+	if duration > 90 {
 		return false
 	}
 	if duration < 0 {
