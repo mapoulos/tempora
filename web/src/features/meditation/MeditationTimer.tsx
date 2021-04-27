@@ -6,11 +6,9 @@ import {
   selectPublicMeditations,
   selectSessionLength,
   setCurrentMeditation,
-  setSessionLengthInMilliseconds,
   updateSessionLength,
 } from "./meditationSlice";
 import { Button, Card, CardContent, Grid, Typography } from "@material-ui/core";
-import Container from "@material-ui/core/Container";
 import { makeStyles, Theme } from "@material-ui/core/styles";
 import { createStyles } from "@material-ui/core/styles";
 import PlayArrowIcon from "@material-ui/icons/PlayArrow";
@@ -48,6 +46,14 @@ const useStyles = makeStyles((theme: Theme) =>
       textAlign: "center",
       fontStyle: "italic",
       marginBottom: 20,
+    },
+    newlineMeditationDiv: {
+      textAlign: "left",
+    },
+    newlineMeditationParagraph: {
+      padding: 0,
+      margin: 0,
+      marginLeft: "5%",
     },
   })
 );
@@ -115,8 +121,8 @@ export function MeditationTimer() {
     if (!stopPressed) {
       return;
     }
-    bellAudioRef.current.pause()
-    meditationAudioRef.current.pause()
+    bellAudioRef.current.pause();
+    meditationAudioRef.current.pause();
     bellAudioRef.current.currentTime = 0;
     meditationAudioRef.current.currentTime = 0;
   }, [stopPressed]);
@@ -297,14 +303,28 @@ export function MeditationTimer() {
               <Typography variant="h6" className={classes.meditationHeader}>
                 {currentMeditation.name}
               </Typography>
-              <Typography paragraph={true} className={classes.meditationText}>
-                {currentMeditation.text}
+              <Typography
+                paragraph={true}
+                className={classes.meditationText}
+                style={{ whiteSpace: "pre-wrap" }}
+              >
+                {currentMeditation.text.includes("\n") ? (
+                  <div className={classes.newlineMeditationDiv}>
+                    {currentMeditation.text.split("\n").map((text, i) => (
+                      <p key={i} className={classes.newlineMeditationParagraph}>
+                        {text}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  currentMeditation.text
+                )}
               </Typography>
             </Grid>
             <Grid container spacing={2} className={classes.timerRow}>
               <Grid item className={classes.timerItem}>
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   aria-label="stop"
                   className={classes.timerButtons}
                   onClick={() => {
@@ -323,7 +343,7 @@ export function MeditationTimer() {
 
               <Grid item className={classes.timerRow}>
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   className={classes.timerButtons}
                   aria-label="Play/Pause"
                   onClick={toggleIsPlaying}
