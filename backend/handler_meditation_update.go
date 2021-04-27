@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -38,7 +39,7 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		// failed validation
 		return badRequest(err.Error())
 	}
-
+	now := time.Now()
 	// if we have a non-zero upload key, that means
 	// we need to run through the validate -> copy to public prefix logic
 	if newMeditationInput.UploadKey != "" {
@@ -46,12 +47,15 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		if err != nil {
 			return badRequest("Provided file is not a properly encoded mp3.")
 		}
-		newPath := "public/" + meditation.ID + ".mp3"
+		unixTime := strconv.FormatInt(now.Unix(), 10)
+		suffix := meditation.ID + "-" + unixTime + ".mp3"
+		newPath := "public/" + suffix
+
+		meditation.URL = mapMp3PathSuffixToFullURL(suffix)
 		err = RenameMP3(newMeditationInput.UploadKey, newPath)
 		if err != nil {
 			return internalServerError("Could not rename mp3")
 		}
-		invalidateCacheForUuid(meditationId)
 	}
 
 	// Update the medtation with the provided values

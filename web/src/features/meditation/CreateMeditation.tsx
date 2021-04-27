@@ -3,25 +3,24 @@ import {
   makeStyles,
   Theme,
   createStyles,
-  Typography,
   CardHeader,
   CardContent,
   Card,
   TextField,
   Grid,
   Button,
-  Paper,
   CardActions,
   FormControlLabel,
   Checkbox,
 } from "@material-ui/core";
-import React, { useState } from "react";
+import { string } from "prop-types";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory } from "react-router";
+import { useHistory, useParams } from "react-router";
 import { AppDispatch } from "../../app/store";
 import { selectIdToken } from "../user/userSlice";
-import { CreateMeditationInput, uploadMp3 } from "./meditationService";
-import { createMeditationThunk, selectCurrentMeditation, setCurrentMeditation } from "./meditationSlice";
+import { CreateMeditationInput, Meditation, uploadMp3 } from "./meditationService";
+import { createMeditationThunk, selectPrivateMeditations, setCurrentMeditation, updateMeditationThunk } from "./meditationSlice";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -76,9 +75,14 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export const CreateMeditation = () => {
+export interface CreateOrUpdateMeditationProps {
+  meditationId?: string;
+}
+
+export const CreateOrUpdateMeditation = () => {
   const dispatch = useDispatch<AppDispatch>()
   const idToken = useSelector(selectIdToken)
+  const privateMeditations = useSelector(selectPrivateMeditations)
   const history = useHistory()
   const [state, setState] = useState({
 	  audioFile: {} as File,
@@ -90,12 +94,32 @@ export const CreateMeditation = () => {
     },
   })
 
+  const {meditationId} = useParams<CreateOrUpdateMeditationProps>()
+
+  const meditation = (meditationId !== undefined) ? privateMeditations.find((m) => m._id === meditationId) : undefined
+
+  const isUpdate = meditation !== undefined
+
+  useEffect(() => {
+    if(isUpdate) {
+      setState({
+        ...state,
+        meditation: {
+          ...state.meditation,
+          name: meditation?.name ?? "",
+          text: meditation?.text ?? "",
+          isPublic: meditation?.isPublic ?? false,
+        }
+      })
+    }
+  }, [])
+
   const isTextFieldValid = (val: string) => {
     const trimmed = val.trim()
     return trimmed.length > 0 && trimmed.length < 2000
   }
 
-  const isSubmitEnabled = isTextFieldValid(state.meditation.name) && isTextFieldValid(state.meditation.text) && isTextFieldValid(state.meditation.uploadKey)
+  const isSubmitEnabled = isTextFieldValid(state.meditation.name) && isTextFieldValid(state.meditation.text) && (isTextFieldValid(state.meditation.uploadKey) || isUpdate)
   const classes = useStyles();
 
   const handleNameFieldChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,16 +171,23 @@ export const CreateMeditation = () => {
   };
 
   const handleSubmit = async () => {
-    const createMeditationArgs: CreateMeditationInput = state.meditation
+    const createOrUpdateMeditationArgs: CreateMeditationInput = state.meditation
     try {
-      const newMeditation = await dispatch(createMeditationThunk(createMeditationArgs, idToken as IdToken))
-      dispatch(setCurrentMeditation(newMeditation))
-      history.push("/")
+      if (isUpdate) {
+        await dispatch(updateMeditationThunk({
+          ...createOrUpdateMeditationArgs,
+          _id: meditationId || "MEDITATION_ID_NOT_FOUND"
+        }, idToken as IdToken))
+        history.push("/private-meditations")
+      } else {
+        const newMeditation = await dispatch(createMeditationThunk(createOrUpdateMeditationArgs, idToken as IdToken))
+        dispatch(setCurrentMeditation(newMeditation))
+        history.push("/")
+      }
     } catch(error) {
-      console.error("There was a problem creating the meditation")
+      console.error("There was a problem creating or updating the meditation")
       console.error(error)
     }
-
   }
 
   return (
@@ -177,6 +208,7 @@ export const CreateMeditation = () => {
                   label="Meditation Name"
                   className={classes.nameField}
                   onChange={handleNameFieldChange}
+                  value={state.meditation.name}
                 ></TextField>
               </Grid>
               <Grid item className={classes.gridItem} xs={12}>
@@ -191,6 +223,7 @@ export const CreateMeditation = () => {
                   className={classes.meditationTextField}
                   multiline
                   rows={15}
+                  value={state.meditation.text}
                 ></TextField>
               </Grid>
               <Grid item className={classes.gridItem} xs={12}>
@@ -207,7 +240,7 @@ export const CreateMeditation = () => {
                     variant="outlined"
                     fullWidth
                   >
-                    Choose MP3
+                    Choose {isUpdate ? (<div>&nbsp;New&nbsp;</div>) : (<div>&nbsp;</div>)} MP3
                     <input
                       type="file"
                       hidden
@@ -230,7 +263,7 @@ export const CreateMeditation = () => {
         </CardContent>
         <CardActions className={classes.cardFooter}>
           <Button disabled={!isSubmitEnabled} size="large" variant="outlined" style={{ height: 50 }} onClick={handleSubmit}>
-            Submit
+            Save
           </Button>
         </CardActions>
       </Card>

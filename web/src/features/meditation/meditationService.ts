@@ -91,6 +91,10 @@ export interface CreateMeditationInput {
   isPublic: boolean;
 }
 
+export interface UpdateMeditationInput extends CreateMeditationInput {
+	_id: string;
+}
+
 export const createMeditation = async (
   input: CreateMeditationInput,
   token: IdToken
@@ -109,6 +113,27 @@ export const createMeditation = async (
   }
   return mapDTOToMeditation(meditationDTO);
 };
+
+export const updateMeditation = async (
+	input: UpdateMeditationInput,
+	token: IdToken
+  ) => {
+	const {_id, ...body} =  input
+
+	const updatedMeditationResponse = await fetch(`${base}/meditations/${_id}`, {
+	  method: "PUT",
+	  body: JSON.stringify(body),
+	  headers: {
+		Authorization: token.__raw,
+	  },
+	});
+
+	const meditationDTO = await updatedMeditationResponse.json();
+	if (updatedMeditationResponse.status >= 400) {
+		throw meditationDTO
+	}
+	return mapDTOToMeditation(meditationDTO);
+  };
 
 export const deleteMeditationById = async (
   meditationId: string,

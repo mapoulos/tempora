@@ -7,6 +7,8 @@ import {
   createMeditation,
   CreateMeditationInput,
   deleteMeditationById,
+  updateMeditation,
+  UpdateMeditationInput,
 } from "./meditationService";
 import { ThunkAction } from "redux-thunk";
 import { Duration } from "luxon";
@@ -95,6 +97,7 @@ export const fetchPublicMeditationsThunk = (): ThunkAction<
     dispatch(setPublicMeditations(meditations));
     dispatch(setCurrentMeditation(meditations[0]));
     dispatch(setIsPublicMeditationsLoading(false));
+
 };
 
 export const fetchPrivateMeditationsThunk = (
@@ -115,8 +118,32 @@ export const createMeditationThunk = (
   const newMeditation = await createMeditation(meditation, idToken);
   const existingMeditations = getState().meditation.private.meditations;
   dispatch(setPrivateMeditations([newMeditation, ...existingMeditations]));
+  if (newMeditation.isPublic) {
+	  await dispatch(fetchPublicMeditationsThunk())
+  }
   return newMeditation;
 };
+
+export const updateMeditationThunk = (
+	meditation: UpdateMeditationInput,
+	idToken: IdToken
+  ): ThunkAction<Promise<Meditation>, RootState, unknown, AnyAction> => async (
+	dispatch,
+	getState
+  ): Promise<Meditation> => {
+	const newMeditation = await updateMeditation(meditation, idToken);
+	const existingMeditations = getState().meditation.private.meditations;
+	const i = existingMeditations.findIndex((m) => m._id === meditation._id)
+
+	if (i > 0) {
+		existingMeditations[i] = newMeditation
+		dispatch(setPrivateMeditations(existingMeditations));
+	}
+	if (newMeditation.isPublic) {
+		await dispatch(fetchPublicMeditationsThunk())
+	}
+	return newMeditation;
+  };
 
 export const deleteMeditationThunk = (
   meditationId: string,
