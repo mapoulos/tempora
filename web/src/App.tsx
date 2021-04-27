@@ -34,7 +34,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { getIdToken } from "./features/user/userSlice";
 import { useDispatch } from "react-redux";
 import { PrivateMeditationTable } from "./features/meditation/PrivateMeditationTable";
-import { CreateMeditation } from "./features/meditation/CreateMeditation";
+import { CreateOrUpdateMeditation } from "./features/meditation/CreateMeditation";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -53,7 +53,6 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     toolbar: {
       background: theme.palette.grey[900],
-      // marginBottom: 20,
       zIndex: theme.zIndex.drawer + 1,
     },
     list: {
@@ -99,8 +98,6 @@ function App(props: WithWidth) {
   const toggleDrawer = () => {
     isDrawerOpen ? setDrawerOpen(false) : setDrawerOpen(true);
   };
-
-  const email = user?.email ?? "";
 
   return (
     <Router>
@@ -202,6 +199,9 @@ function App(props: WithWidth) {
             <Route path="/about">
               <About />
             </Route>
+            <Route path="/meditations/:meditationId/update">
+              <CreateOrUpdateMeditation />
+            </Route>
             <Route path="/meditations">
               <PublicMeditationTable />
             </Route>
@@ -209,8 +209,9 @@ function App(props: WithWidth) {
               <PrivateMeditationTable />
             </Route>
             <Route path="/create-meditation">
-              <CreateMeditation />
+              <CreateOrUpdateMeditation />
             </Route>
+
             <Route path="/">
               <MeditationTimer />
             </Route>

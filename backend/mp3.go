@@ -106,6 +106,11 @@ func mapUUIDToPublicURL(uuid string) string {
 	return "https://" + publicUrlBase + "/" + uuid + ".mp3"
 }
 
+func mapMp3PathSuffixToFullURL(suffix string) string {
+	publicUrlBase := os.Getenv("PUBLIC_AUDIO_BASE")
+	return "https://" + publicUrlBase + "/" + suffix
+}
+
 func invalidateCacheForUuid(uuid string) error {
 	sess, _ := session.NewSession(&aws.Config{
 		Region: aws.String(getRegion()),
