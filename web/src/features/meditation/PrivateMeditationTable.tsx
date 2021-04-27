@@ -199,7 +199,7 @@ export function PrivateMeditationTable() {
         <DialogContent>
           <DialogContentText>
             Are you sure you want to delete this meditation? This action
-            <b>cannot</b> be undone.
+            <b>can not</b> be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
