@@ -5,13 +5,27 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/go-playground/validator/v10"
 )
 
 var validate *validator.Validate
 
+var awsConfig *aws.Config
+
+func getAwsConfig(local bool) *aws.Config {
+	config := aws.Config{
+		Region: aws.String(getRegion()),
+	}
+	if local {
+		config.Endpoint = aws.String("http://localhost:4566")
+		config.S3ForcePathStyle = aws.Bool(true)
+	}
+	return &config
+}
+
 func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
-	store := NewDynamoMeditationStore(os.Getenv("DDB_TABLE"), false)
+	store := NewDynamoMeditationStore(os.Getenv("DDB_TABLE"), awsConfig)
 
 	switch req.RequestContext.HTTP.Path {
 	case "/upload-url":
@@ -46,6 +60,7 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 func main() {
 	validate = validator.New()
 	validate.RegisterValidation("uploadKey", uploadKeyValidator)
+	awsConfig = getAwsConfig(false)
 
 	lambda.Start(handler)
 }

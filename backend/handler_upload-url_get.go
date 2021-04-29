@@ -12,12 +12,9 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func uploadHandler(req events.APIGatewayV2HTTPRequest) *events.APIGatewayV2HTTPResponse {
+func getPresignedUrl(config *aws.Config) (string, string, error) {
 	// setup an s3 svc
-	region := os.Getenv("AWS_REGION")
-	sess, _ := session.NewSession(&aws.Config{
-		Region: &region,
-	})
+	sess, _ := session.NewSession(config)
 	svc := s3.New(sess)
 
 	// generate a presigned URL
@@ -28,6 +25,12 @@ func uploadHandler(req events.APIGatewayV2HTTPRequest) *events.APIGatewayV2HTTPR
 		Key:    &key,
 	})
 	url, err := s3req.Presign(15 * time.Minute)
+	return key, url, err
+}
+
+func uploadHandler(req events.APIGatewayV2HTTPRequest) *events.APIGatewayV2HTTPResponse {
+	// get the error
+	key, url, err := getPresignedUrl(awsConfig)
 	if err != nil {
 		return internalServerError(err.Error())
 	}

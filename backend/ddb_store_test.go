@@ -12,10 +12,7 @@ import (
 )
 
 func createLocalDynamoTable(tableName string) {
-	sess := session.Must(session.NewSession(&aws.Config{
-		Region:   aws.String("us-east-1"),
-		Endpoint: aws.String("http://127.0.0.1:9000"),
-	}))
+	sess := session.Must(session.NewSession(getAwsConfig(true)))
 
 	svc := dynamodb.New(sess)
 
@@ -86,7 +83,7 @@ func contains(meditations []Meditation, meditationToFind Meditation) bool {
 
 func initializeTestingStore(tableName string) *DynamoMeditationStore {
 	createLocalDynamoTable(tableName)
-	store := NewDynamoMeditationStore(tableName, true)
+	store := NewDynamoMeditationStore(tableName, getAwsConfig(true))
 	return &store
 }
 

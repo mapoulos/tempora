@@ -46,7 +46,7 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	// if we have a non-zero upload key, that means
 	// we need to run through the validate -> copy to public prefix logic
 	if newMeditationInput.UploadKey != "" {
-		err = ValidateMP3(newMeditationInput.UploadKey)
+		err = ValidateMP3(newMeditationInput.UploadKey, awsConfig)
 		if err != nil {
 			return badRequest("Provided file is not a properly encoded mp3.")
 		}
@@ -55,7 +55,7 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		newPath := "public/" + suffix
 
 		meditation.URL = mapMp3PathSuffixToFullURL(suffix)
-		err = RenameMP3(newMeditationInput.UploadKey, newPath)
+		err = RenameMP3(newMeditationInput.UploadKey, newPath, awsConfig)
 		if err != nil {
 			return internalServerError("Could not rename mp3")
 		}

@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -34,31 +33,11 @@ type DynamoMeditationStore struct {
 	tableName string
 }
 
-func NewDynamoMeditationStore(tableName string, local bool) DynamoMeditationStore {
+func NewDynamoMeditationStore(tableName string, config *aws.Config) DynamoMeditationStore {
 	dynamoStore := DynamoMeditationStore{
 		tableName: tableName,
 	}
-
-	environmentRegion := os.Getenv("AWS_REGION")
-	defaultRegion := "us-east-1"
-	var region string
-	if environmentRegion != "" {
-		region = environmentRegion
-	} else {
-		region = defaultRegion
-	}
-
-	if local {
-		dynamoStore.sess = session.Must(session.NewSession(&aws.Config{
-			Region:   aws.String(region),
-			Endpoint: aws.String("http://127.0.0.1:9000"),
-		}))
-	} else {
-		dynamoStore.sess = session.Must(session.NewSession(&aws.Config{
-			Region:   aws.String(region),
-			Endpoint: aws.String("https://dynamodb.us-east-1.amazonaws.com"),
-		}))
-	}
+	dynamoStore.sess = session.Must(session.NewSession(config))
 	dynamoStore.svc = dynamodb.New(dynamoStore.sess)
 
 	return dynamoStore
