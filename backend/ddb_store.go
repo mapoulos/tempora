@@ -93,6 +93,7 @@ func (store DynamoMeditationStore) ListMeditations(userId string) ([]Meditation,
 				S: aws.String(userId),
 			},
 		},
+		ScanIndexForward: aws.Bool(false),
 	}
 
 	resp, err := store.svc.Query(params)
@@ -127,6 +128,7 @@ func (store DynamoMeditationStore) ListPublicMeditations() ([]Meditation, error)
 				S: aws.String("public"),
 			},
 		},
+		ScanIndexForward: aws.Bool(false),
 	}
 
 	resp, err := store.svc.Query(params)

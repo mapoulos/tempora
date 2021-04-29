@@ -1,7 +1,7 @@
-service: tempora
+service: tempora-golang
 frameworkVersion: "2"
 custom:
-    publicAudioUrl: tempora-${opt:stage, self:provider.stage, "dev"}.equul.us
+    publicAudioUrl: tempora-audio-${opt:stage, self:provider.stage, "dev"}.equul.us
 provider:
   name: aws
   runtime: go1.x
@@ -13,10 +13,12 @@ provider:
       serviceAuthorizer:
         identitySource: $request.header.Authorization
         issuerUrl: https://equulus.us.auth0.com/
-        audience: "a45HOOQ5VyDf2mf4V0oC5hXXClfjR1P1"
+        audience:
+          - "a45HOOQ5VyDf2mf4V0oC5hXXClfjR1P1"
+          - "https://1sctves1d1.execute-api.us-east-1.amazonaws.com"
 
 # you can overwrite defaults here
-  stage: dev2
+  stage: dev
 #  region: us-east-1
 
   iamRoleStatements:
@@ -27,6 +29,7 @@ provider:
         - !GetAtt DynamoTable.Arn
         - !Sub "${DynamoTable.Arn}/index/gs1"
         - !Sub "${DynamoTable.Arn}/index/gs2"
+        - !Sub "${DynamoTable.Arn}/index/gs3"
     - Effect: "Allow"
       Action:
         - "s3:*"
@@ -105,7 +108,7 @@ resources:
           - AttributeName: "sk"
             KeyType: "RANGE"
         GlobalSecondaryIndexes:
-          - IndexName: "gs1" # for finding by meditationId
+          - IndexName: "gs1" # reverse lookups
             Projection:
               ProjectionType: ALL
             KeySchema:
@@ -113,7 +116,7 @@ resources:
                 KeyType: "HASH"
               - AttributeName: "pk"
                 KeyType: "RANGE"
-          - IndexName: "gs2" # for finding by meditationId
+          - IndexName: "gs2" # searching by UserId
             Projection:
               ProjectionType: ALL
             KeySchema:
@@ -134,7 +137,7 @@ resources:
       Type: AWS::S3::Bucket
       DeletionPolicy: Retain
       Properties:
-        BucketName: tempora-audio-${opt:stage, self:provider.stage, "dev"}
+        BucketName: equulus-tempora-${opt:stage, self:provider.stage, "dev"}
         CorsConfiguration:
           CorsRules:
             - AllowedHeaders:

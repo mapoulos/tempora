@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 )
 
 func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMeditationStore) *events.APIGatewayV2HTTPResponse {
@@ -44,19 +44,19 @@ func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		return badRequest("Provided file is not a properly encoded mp3.")
 	}
 
-	u4 := uuid.NewV4()
+	id := ksuid.New().String()
 	now := time.Now()
 
 	// move the mp3 to public and rename
-	newPath := "public/" + u4.String() + ".mp3"
+	newPath := "public/" + id + ".mp3"
 	err = RenameMP3(input.UploadKey, newPath, awsConfig)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
 	newMeditation := Meditation{
-		ID:        u4.String(),
-		URL:       mapUUIDToPublicURL(u4.String()),
+		ID:        id,
+		URL:       mapUUIDToPublicURL(id),
 		Name:      input.Name,
 		Text:      input.Text,
 		Public:    input.Public,
