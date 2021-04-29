@@ -5,8 +5,74 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	uuid "github.com/satori/go.uuid"
 )
+
+func createLocalDynamoTable(tableName string) {
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region:   aws.String("us-east-1"),
+		Endpoint: aws.String("http://127.0.0.1:9000"),
+	}))
+
+	svc := dynamodb.New(sess)
+
+	createTableParams := &dynamodb.CreateTableInput{
+		TableName: aws.String(tableName),
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{AttributeName: aws.String("pk"), KeyType: aws.String("HASH")},
+			{AttributeName: aws.String("sk"), KeyType: aws.String("RANGE")},
+		},
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{AttributeName: aws.String("pk"), AttributeType: aws.String("S")},
+			{AttributeName: aws.String("sk"), AttributeType: aws.String("S")},
+			{AttributeName: aws.String("ppk"), AttributeType: aws.String("S")},
+			{AttributeName: aws.String("pppk"), AttributeType: aws.String("S")},
+		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String("gs1"),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{AttributeName: aws.String("sk"), KeyType: aws.String("HASH")},
+					{AttributeName: aws.String("pk"), KeyType: aws.String("RANGE")},
+				},
+				Projection: &dynamodb.Projection{
+					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
+				},
+			},
+			{
+				IndexName: aws.String("gs2"),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{AttributeName: aws.String("ppk"), KeyType: aws.String("HASH")},
+					{AttributeName: aws.String("sk"), KeyType: aws.String("RANGE")},
+				},
+				Projection: &dynamodb.Projection{
+					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
+				},
+			},
+			{
+				IndexName: aws.String("gs3"),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{AttributeName: aws.String("pppk"), KeyType: aws.String("HASH")},
+					{AttributeName: aws.String("sk"), KeyType: aws.String("RANGE")},
+				},
+				Projection: &dynamodb.Projection{
+					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
+				},
+			},
+		},
+	}
+
+	_, err := svc.CreateTable(createTableParams)
+
+	if err != nil {
+		fmt.Println("Error in table creation")
+		fmt.Println(err.Error())
+	}
+}
 
 func contains(meditations []Meditation, meditationToFind Meditation) bool {
 	var match Meditation
@@ -18,10 +84,17 @@ func contains(meditations []Meditation, meditationToFind Meditation) bool {
 	return match != Meditation{}
 }
 
+func initializeTestingStore(tableName string) *DynamoMeditationStore {
+	createLocalDynamoTable(tableName)
+	store := NewDynamoMeditationStore(tableName, true)
+	return &store
+}
+
 func TestDynamoMeditationStore(t *testing.T) {
+
 	t.Run("Test MemoryStore SaveMeditation", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
-		store := NewDynamoMeditationStore(tableName, true, true)
+		store := initializeTestingStore(tableName)
 
 		m := Meditation{
 			UserId: "alex",
@@ -39,7 +112,7 @@ func TestDynamoMeditationStore(t *testing.T) {
 
 	t.Run("Test MemoryStore SaveMeditation and Get", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
-		store := NewDynamoMeditationStore(tableName, true, true)
+		store := initializeTestingStore(tableName)
 
 		uuid := uuid.NewV4().String()
 		userId := "alex"
@@ -52,18 +125,18 @@ func TestDynamoMeditationStore(t *testing.T) {
 
 		store.SaveMeditation(m)
 
-		m2, err := store.GetMeditation(userId, uuid)
+		m2, err := store.GetMeditation(uuid)
 		if err != nil {
 			t.Error("SaveMeditation and GetMeditation failed")
 		}
 		if m2 != m {
-			t.Errorf("Expected %v Got %v", m, m2)
+			t.Errorf("Expected \n%+v \n\nGot\n %+v", m, m2)
 		}
 	})
 
 	t.Run("Test Multiple Creates and List", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
-		store := NewDynamoMeditationStore(tableName, true, true)
+		store := initializeTestingStore(tableName)
 
 		userId := "alex"
 		numMeditations := 10
@@ -86,7 +159,7 @@ func TestDynamoMeditationStore(t *testing.T) {
 
 	t.Run("Test Updates", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
-		store := NewDynamoMeditationStore(tableName, true, true)
+		store := initializeTestingStore(tableName)
 
 		userId := "alex"
 
@@ -100,7 +173,7 @@ func TestDynamoMeditationStore(t *testing.T) {
 			})
 		}
 
-		m, err := store.GetMeditation(userId, "0")
+		m, err := store.GetMeditation("0")
 		if err != nil {
 			t.Error("Did not find meditation with ID 0")
 		}
@@ -123,7 +196,7 @@ func TestDynamoMeditationStore(t *testing.T) {
 
 	t.Run("Test Delete", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
-		store := NewDynamoMeditationStore(tableName, true, true)
+		store := initializeTestingStore(tableName)
 
 		userId := "alex"
 
@@ -137,11 +210,11 @@ func TestDynamoMeditationStore(t *testing.T) {
 			})
 		}
 
-		m, err := store.GetMeditation(userId, "0")
+		m, err := store.GetMeditation("0")
 		if err != nil {
 			t.Error("Did not find meditation with ID 0")
 		}
-		store.DeleteMeditation(userId, "0")
+		store.DeleteMeditation("0")
 
 		meditations, err := store.ListMeditations(userId)
 		if err != nil {
@@ -157,7 +230,7 @@ func TestDynamoMeditationStore(t *testing.T) {
 
 	t.Run("Test Public Meditations", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
-		store := NewDynamoMeditationStore(tableName, true, true)
+		store := initializeTestingStore(tableName)
 
 		users := []string{"gregory", "alexandria", "maximus"}
 
@@ -167,13 +240,13 @@ func TestDynamoMeditationStore(t *testing.T) {
 				store.SaveMeditation(Meditation{
 					UserId: user,
 					Name:   "Meditation Private " + strconv.Itoa(i),
-					ID:     strconv.Itoa(i),
+					ID:     uuid.NewV4().String(),
 					Public: false,
 				})
 				store.SaveMeditation(Meditation{
 					UserId: user,
 					Name:   "Meditation Public " + strconv.Itoa(i),
-					ID:     strconv.Itoa(i * 10),
+					ID:     uuid.NewV4().String(),
 					Public: true,
 				})
 			}

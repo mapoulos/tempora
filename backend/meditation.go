@@ -11,7 +11,7 @@ import (
 var validate *validator.Validate
 
 func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
-	store := NewDynamoMeditationStore(os.Getenv("DDB_TABLE"), false, false)
+	store := NewDynamoMeditationStore(os.Getenv("DDB_TABLE"), false)
 
 	switch req.RequestContext.HTTP.Path {
 	case "/upload-url":

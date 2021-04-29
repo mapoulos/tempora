@@ -17,7 +17,15 @@ func DeleteMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	}
 
 	// attempt to delete the meditation
-	err := store.DeleteMeditation(userId, meditationId)
+	oldMeditation, err := store.GetMeditation(meditationId)
+	if err != nil {
+		return notFound("No meditation with id " + meditationId + " was found")
+	}
+	if oldMeditation.UserId != userId {
+		return notFound("No meditation with id " + meditationId + " was found")
+	}
+
+	err = store.DeleteMeditation(meditationId)
 	if err != nil {
 		return notFound("No meditation with id " + meditationId + " was found")
 	}
