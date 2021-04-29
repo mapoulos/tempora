@@ -12,4 +12,5 @@ require (
 	github.com/hajimehoshi/go-mp3 v0.3.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/segmentio/ksuid v1.0.3 // indirect
 )

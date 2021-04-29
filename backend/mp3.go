@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/cloudfront"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/hajimehoshi/go-mp3"
@@ -40,10 +38,8 @@ func isDurationValid(duration int64) bool {
 	return true
 }
 
-func ValidateMP3(uploadKey string) error {
-	sess, _ := session.NewSession(&aws.Config{
-		Region: aws.String(getRegion()),
-	})
+func ValidateMP3(uploadKey string, config *aws.Config) error {
+	sess, _ := session.NewSession(config)
 	downloader := s3manager.NewDownloader(sess)
 	audioBuffer := aws.NewWriteAtBuffer([]byte{})
 	_, err := downloader.Download(audioBuffer, &s3.GetObjectInput{
@@ -67,10 +63,8 @@ func ValidateMP3(uploadKey string) error {
 	return nil
 }
 
-func RenameMP3(uploadKey string, destKey string) error {
-	sess, _ := session.NewSession(&aws.Config{
-		Region: aws.String(getRegion()),
-	})
+func RenameMP3(uploadKey string, destKey string, config *aws.Config) error {
+	sess, _ := session.NewSession(config)
 
 	svc := s3.New(sess)
 
@@ -82,7 +76,7 @@ func RenameMP3(uploadKey string, destKey string) error {
 		ContentType:       aws.String("audio/mpeg"),
 		MetadataDirective: aws.String(s3.MetadataDirectiveReplace),
 	}
-	fmt.Println(copyObjectInput)
+
 	_, err := svc.CopyObject(&copyObjectInput)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -109,30 +103,4 @@ func mapUUIDToPublicURL(uuid string) string {
 func mapMp3PathSuffixToFullURL(suffix string) string {
 	publicUrlBase := os.Getenv("PUBLIC_AUDIO_BASE")
 	return "https://" + publicUrlBase + "/" + suffix
-}
-
-func invalidateCacheForUuid(uuid string) error {
-	sess, _ := session.NewSession(&aws.Config{
-		Region: aws.String(getRegion()),
-	})
-	svc := cloudfront.New(sess)
-	now := time.Now()
-
-	distributionId := os.Getenv("CLOUDFRONT_DISTRIBUTION_ID")
-
-	invalidationRequest := cloudfront.CreateInvalidationInput{
-		DistributionId: &distributionId,
-		InvalidationBatch: &cloudfront.InvalidationBatch{
-			CallerReference: aws.String(now.String()),
-			Paths: &cloudfront.Paths{
-				Quantity: aws.Int64(1),
-				Items: []*string{
-					aws.String(uuid + ".mp3"),
-				},
-			},
-		},
-	}
-
-	svc.CreateInvalidation(&invalidationRequest)
-	return nil
 }

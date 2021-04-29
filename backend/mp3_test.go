@@ -7,7 +7,7 @@ import (
 
 func TestMP3Validation(t *testing.T) {
 	t.Run("Test a valid MP3 file", func(t *testing.T) {
-		f, err := os.Open("media/evagrius.onprayer.003.mp3")
+		f, _ := os.Open("../media/evagrius.onprayer.003.mp3")
 
 		duration, err := mp3duration(f)
 		if err != nil {
@@ -20,7 +20,7 @@ func TestMP3Validation(t *testing.T) {
 	})
 
 	t.Run("Test a non existent MP3 file", func(t *testing.T) {
-		f, _ := os.Open("media/I_DONT_EXIST.mp3")
+		f, _ := os.Open("../media/I_DONT_EXIST.mp3")
 
 		_, err := mp3duration(f)
 		if err == nil {
@@ -29,7 +29,7 @@ func TestMP3Validation(t *testing.T) {
 	})
 
 	t.Run("Reject an mp3 that is too long", func(t *testing.T) {
-		f, _ := os.Open("media/too_long_2m_9s.mp3")
+		f, _ := os.Open("../media/too_long_2m_9s.mp3")
 
 		duration, _ := mp3duration(f)
 		valid := isDurationValid(duration)
@@ -39,7 +39,7 @@ func TestMP3Validation(t *testing.T) {
 	})
 
 	t.Run("Accept an mp3 that is less than 90s", func(t *testing.T) {
-		f, _ := os.Open("media/evagrius.onprayer.003.mp3")
+		f, _ := os.Open("../media/evagrius.onprayer.003.mp3")
 
 		duration, _ := mp3duration(f)
 		valid := isDurationValid(duration)

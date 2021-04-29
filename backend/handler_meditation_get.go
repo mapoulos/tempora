@@ -18,8 +18,11 @@ func GetMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMedit
 	if !ok {
 		return internalServerError("No {meditationId{} found in path parameters")
 	}
-	meditation, err := store.GetMeditation(userId, meditationId)
+	meditation, err := store.GetMeditation(meditationId)
 	if err != nil {
+		return notFound("No meditation with id " + meditationId + " was found")
+	}
+	if meditation.UserId != userId {
 		return notFound("No meditation with id " + meditationId + " was found")
 	}
 

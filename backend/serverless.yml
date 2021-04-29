@@ -1,31 +1,11 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: tempora-golang
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
-
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
 frameworkVersion: "2"
-
+custom:
+    publicAudioUrl: tempora-audio-${opt:stage, self:provider.stage, "dev"}.equul.us
 provider:
   name: aws
   runtime: go1.x
-  # lambdaHashingVersion: 20201221
-  environment:
-    DOMAIN_SUFFIX: tempora-kairos
+
 
   httpApi:
     cors: true
@@ -33,38 +13,14 @@ provider:
       serviceAuthorizer:
         identitySource: $request.header.Authorization
         issuerUrl: https://equulus.us.auth0.com/
-        audience: "a45HOOQ5VyDf2mf4V0oC5hXXClfjR1P1"
-
-    # cors:
-    #   origin: '*'
-    #   #allowedOrigins:
-    #   #  - http://localhost:3000
-    #   #  - https://tempora.netlify.app
-    #   #  - https://deploy-*tempora.netlify.app
-    #   #  - http://192.168.1.51:3000
-    #   allowedHeaders:
-    #     - Content-Type
-    #     - X-Amz-Date
-    #     - Authorization
-    #     - X-Api-Key
-    #     - X-Amz-Security-Token
-    #     - X-Amz-User-Agent
-    #   allowedMethods:
-    #     - GET
-    #     - PUT
-    #     - POST
-    #     - PATCH
-    #     - DELETE
-    #     - OPTIONS
-    #       #allowCredentials: true
-    #   maxAge: 6000
-
+        audience:
+          - "a45HOOQ5VyDf2mf4V0oC5hXXClfjR1P1"
+          - "https://1sctves1d1.execute-api.us-east-1.amazonaws.com"
 
 # you can overwrite defaults here
   stage: dev
 #  region: us-east-1
 
-# you can add statements to the Lambda function's IAM Role here
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -73,17 +29,13 @@ provider:
         - !GetAtt DynamoTable.Arn
         - !Sub "${DynamoTable.Arn}/index/gs1"
         - !Sub "${DynamoTable.Arn}/index/gs2"
+        - !Sub "${DynamoTable.Arn}/index/gs3"
     - Effect: "Allow"
       Action:
         - "s3:*"
       Resource:
         - !Sub "${AudioBucket.Arn}"
         - !Sub "${AudioBucket.Arn}/*"
-
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
 
 package:
   exclude:
@@ -97,7 +49,7 @@ functions:
     environment:
       DDB_TABLE: !Ref DynamoTable
       AUDIO_BUCKET: !Ref AudioBucket
-      PUBLIC_AUDIO_BASE: tempora-audio-${self:provider.stage}.equul.us
+      PUBLIC_AUDIO_BASE: ${self:custom.publicAudioUrl}
       CLOUDFRONT_DISTRIBUTION_ID: !Ref AudioDistribution
     events:
       - httpApi:
@@ -131,54 +83,15 @@ functions:
           path: /upload-url
           method: get
           authorizer: serviceAuthorizer
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-# events:
-#    events:
-#      - httpApi:
-#          path: /users/create
-#          method: get
-#      - websocket: $connect
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
-#      - alb:
-#          listenerArn: arn:aws:elasticloadbalancing:us-east-1:XXXXXX:listener/app/my-load-balancer/50dc6c495c0c9188/
-#          priority: 1
-#          conditions:
-#            host: example.com
-#            path: /hello
-
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
 
 # you can add CloudFormation resource templates here
 resources:
   Resources:
     DynamoTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
       Properties:
-        TableName: tempora-golang-${opt:stage, 'dev'}
+        TableName: tempora-${opt:stage, self:provider.stage, "dev"}
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
           - AttributeName: "pk"
@@ -195,13 +108,23 @@ resources:
           - AttributeName: "sk"
             KeyType: "RANGE"
         GlobalSecondaryIndexes:
-          - IndexName: "gs1" # for finding by meditationId
+          - IndexName: "gs1" # reverse lookups
+            Projection:
+              ProjectionType: ALL
+            KeySchema:
+              - AttributeName: "sk"
+                KeyType: "HASH"
+              - AttributeName: "pk"
+                KeyType: "RANGE"
+          - IndexName: "gs2" # searching by UserId
             Projection:
               ProjectionType: ALL
             KeySchema:
               - AttributeName: "ppk"
                 KeyType: "HASH"
-          - IndexName: "gs2" # For listing public meditations
+              - AttributeName: "sk"
+                KeyType: "RANGE"
+          - IndexName: "gs3" # For listing public meditations
             Projection:
               ProjectionType: ALL
             KeySchema:
@@ -209,10 +132,12 @@ resources:
                 KeyType: "HASH"
               - AttributeName: "sk"
                 KeyType: "RANGE"
+
     AudioBucket:
       Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
       Properties:
-        BucketName: equulus-tempora-${self:provider.stage}
+        BucketName: equulus-tempora-${opt:stage, self:provider.stage, "dev"}
         CorsConfiguration:
           CorsRules:
             - AllowedHeaders:
@@ -275,7 +200,7 @@ resources:
           PriceClass: 'PriceClass_100'
           DefaultRootObject: index.html
           Aliases:
-            - tempora-audio-${self:provider.stage}.equul.us
+            - ${self:custom.publicAudioUrl}
           ViewerCertificate:
             AcmCertificateArn: arn:aws:acm:us-east-1:051489715994:certificate/033aa07f-b8b8-4668-bd95-55af13b78b29
             SslSupportMethod: 'sni-only'
@@ -285,53 +210,9 @@ resources:
       Properties:
         HostedZoneName: equul.us.
         RecordSets:
-          - Name: tempora-audio-${self:provider.stage}.equul.us
+          - Name: ${self:custom.publicAudioUrl}
             Type: A
             AliasTarget:
               # for this magic var: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-route53.html
               HostedZoneId: Z2FDTNDATAQYW2
               DNSName: !GetAtt AudioDistribution.DomainName
-
-    UserPool:
-      Type: AWS::Cognito::UserPool
-      Properties:
-        UserPoolName: service-user-pool-${opt:stage, self:provider.stage}
-        UsernameAttributes:
-          - email
-        AutoVerifiedAttributes:
-          - email
-
-    UserPoolClient:
-      Type: AWS::Cognito::UserPoolClient
-      Properties:
-        ClientName: service-user-pool-client-${opt:stage, self:provider.stage}
-        AllowedOAuthFlows:
-          - implicit
-        AllowedOAuthFlowsUserPoolClient: true
-        AllowedOAuthScopes:
-          - phone
-          - email
-          - openid
-          - profile
-          - aws.cognito.signin.user.admin
-        UserPoolId:
-          Ref: UserPool
-        CallbackURLs:
-          - http://localhost:3000
-        ExplicitAuthFlows:
-          - ALLOW_USER_SRP_AUTH
-          - ALLOW_REFRESH_TOKEN_AUTH
-        GenerateSecret: false
-        SupportedIdentityProviders:
-          - COGNITO
-
-    UserPoolDomain:
-      Type: AWS::Cognito::UserPoolDomain
-      Properties:
-        UserPoolId:
-          Ref: UserPool
-        Domain: service-user-pool-domain-${opt:stage, self:provider.stage}-${self:provider.environment.DOMAIN_SUFFIX}
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"

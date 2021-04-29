@@ -8,3 +8,23 @@ Backend:
 
 Frontend:
 - react + typescript, with vite as the build tool
+
+
+## Testing
+
+### Backend
+
+#### 1) run localstack
+
+```bash
+pip3 install localstack # if needed
+localstack
+```
+
+#### 2) run the test suite
+
+```bash
+cd backend/
+go test
+```
+

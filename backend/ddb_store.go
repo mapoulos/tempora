@@ -3,8 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -24,8 +22,8 @@ type MeditationStore interface {
 	SaveMeditation(m Meditation) error
 	ListMeditations(userId string) ([]Meditation, error)
 	ListPublicMeditations(userId string) ([]Meditation, error)
-	GetMeditation(userId string, id string) (Meditation, error)
-	DeleteMeditation(userId string, id string) error
+	GetMeditation(id string) (Meditation, error)
+	DeleteMeditation(id string) error
 	UpdateMeditation(m Meditation) error
 }
 
@@ -35,96 +33,25 @@ type DynamoMeditationStore struct {
 	tableName string
 }
 
-func createDynamoTable(tableName string, svc *dynamodb.DynamoDB) {
-	createTableParams := &dynamodb.CreateTableInput{
-		TableName: aws.String(tableName),
-		KeySchema: []*dynamodb.KeySchemaElement{
-			{AttributeName: aws.String("pk"), KeyType: aws.String("HASH")},
-			{AttributeName: aws.String("sk"), KeyType: aws.String("RANGE")},
-		},
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
-			{AttributeName: aws.String("pk"), AttributeType: aws.String("S")},
-			{AttributeName: aws.String("sk"), AttributeType: aws.String("S")},
-			{AttributeName: aws.String("ppk"), AttributeType: aws.String("S")},
-			{AttributeName: aws.String("pppk"), AttributeType: aws.String("S")},
-		},
-		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
-		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
-			{
-				IndexName: aws.String("gs1"),
-				KeySchema: []*dynamodb.KeySchemaElement{
-					{AttributeName: aws.String("ppk"), KeyType: aws.String("HASH")},
-				},
-				Projection: &dynamodb.Projection{
-					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
-				},
-			},
-			{
-				IndexName: aws.String("gs2"),
-				KeySchema: []*dynamodb.KeySchemaElement{
-					{AttributeName: aws.String("pppk"), KeyType: aws.String("HASH")},
-					{AttributeName: aws.String("sk"), KeyType: aws.String("RANGE")},
-				},
-				Projection: &dynamodb.Projection{
-					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
-				},
-			},
-		},
-	}
-
-	_, err := svc.CreateTable(createTableParams)
-
-	if err != nil {
-		fmt.Println("Error in table creation")
-		fmt.Println(err.Error())
-	}
-}
-
-func NewDynamoMeditationStore(tableName string, local bool, createTable bool) DynamoMeditationStore {
+func NewDynamoMeditationStore(tableName string, config *aws.Config) DynamoMeditationStore {
 	dynamoStore := DynamoMeditationStore{
 		tableName: tableName,
 	}
-
-	environmentRegion := os.Getenv("AWS_REGION")
-	defaultRegion := "us-east-1"
-	var region string
-	if environmentRegion != "" {
-		region = environmentRegion
-	} else {
-		region = defaultRegion
-	}
-
-	if local {
-		dynamoStore.sess = session.Must(session.NewSession(&aws.Config{
-			Region:   aws.String(region),
-			Endpoint: aws.String("http://127.0.0.1:9000"),
-		}))
-	} else {
-		dynamoStore.sess = session.Must(session.NewSession(&aws.Config{
-			Region:   aws.String(region),
-			Endpoint: aws.String("https://dynamodb.us-east-1.amazonaws.com"),
-		}))
-	}
+	dynamoStore.sess = session.Must(session.NewSession(config))
 	dynamoStore.svc = dynamodb.New(dynamoStore.sess)
-
-	tableExists, _ := dynamoStore.svc.DescribeTable(&dynamodb.DescribeTableInput{
-		TableName: aws.String(tableName),
-	})
-
-	if createTable && tableExists != nil && local {
-		// TODO: move this to the test suite, since that's the only reason for it
-		// really
-		createDynamoTable(tableName, dynamoStore.svc)
-	}
 
 	return dynamoStore
 }
 
 func mapMeditationToMeditationRecord(m Meditation) MeditationRecord {
-	pk := m.UserId
-	sk := m.Name + "/" + m.ID
-	ppk := m.ID
-	pppk := strconv.FormatBool(m.Public)
+	pk := "med#" + m.ID
+	sk := pk
+	ppk := m.UserId
+	pppk := "private"
+
+	if m.Public {
+		pppk = "public"
+	}
 
 	return MeditationRecord{
 		Pk:         pk,
@@ -159,12 +86,14 @@ func (store DynamoMeditationStore) ListMeditations(userId string) ([]Meditation,
 
 	params := &dynamodb.QueryInput{
 		TableName:              aws.String(store.tableName),
-		KeyConditionExpression: aws.String("pk = :userId"),
+		IndexName:              aws.String("gs2"),
+		KeyConditionExpression: aws.String("ppk = :userId"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":userId": {
 				S: aws.String(userId),
 			},
 		},
+		ScanIndexForward: aws.Bool(false),
 	}
 
 	resp, err := store.svc.Query(params)
@@ -192,13 +121,14 @@ func (store DynamoMeditationStore) ListPublicMeditations() ([]Meditation, error)
 
 	params := &dynamodb.QueryInput{
 		TableName:              aws.String(store.tableName),
-		KeyConditionExpression: aws.String("pppk = :isPublic"),
-		IndexName:              aws.String("gs2"),
+		KeyConditionExpression: aws.String("pppk = :public"),
+		IndexName:              aws.String("gs3"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":isPublic": {
-				S: aws.String("true"),
+			":public": {
+				S: aws.String("public"),
 			},
 		},
+		ScanIndexForward: aws.Bool(false),
 	}
 
 	resp, err := store.svc.Query(params)
@@ -224,49 +154,47 @@ func (store DynamoMeditationStore) ListPublicMeditations() ([]Meditation, error)
 	return meditations, nil
 }
 
-func (store DynamoMeditationStore) GetMeditation(userId string, id string) (Meditation, error) {
-	params := &dynamodb.QueryInput{
-		TableName:              aws.String(store.tableName),
-		KeyConditionExpression: aws.String("ppk = :meditationId"),
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":meditationId": {
-				S: aws.String(id),
+func (store DynamoMeditationStore) GetMeditation(id string) (Meditation, error) {
+	m := Meditation{
+		ID: id,
+	}
+	r := mapMeditationToMeditationRecord(m)
+	params := &dynamodb.GetItemInput{
+		TableName: aws.String(store.tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"pk": {
+				S: &r.Pk,
+			},
+			"sk": {
+				S: &r.Sk,
 			},
 		},
-		IndexName: aws.String("gs1"),
 	}
 
-	resp, err := store.svc.Query(params)
+	resp, err := store.svc.GetItem(params)
 	if err != nil {
 		return Meditation{}, errors.New("Error with call to dynamodb on GetMeditation")
 	}
-	var meditationRecords []MeditationRecord
-	err = dynamodbattribute.UnmarshalListOfMaps(resp.Items, &meditationRecords)
-	respLen := len(meditationRecords)
-	if respLen == 0 {
-		return Meditation{}, errors.New("No meditation with ID " + id + " was found")
-	}
-	if respLen > 1 {
-		return Meditation{}, errors.New("Multiple meditions with " + id + " were found!")
-	}
+	var meditationRecord MeditationRecord
+	err = dynamodbattribute.UnmarshalMap(resp.Item, &meditationRecord)
 
-	meditation := meditationRecords[0].Meditation
-	return meditation, nil
+	return meditationRecord.Meditation, nil
 }
 
-func (store DynamoMeditationStore) DeleteMeditation(userId string, id string) error {
-	meditation, err := store.GetMeditation(userId, id)
+func (store DynamoMeditationStore) DeleteMeditation(id string) error {
+	meditation, err := store.GetMeditation(id)
 	if err != nil {
 		return err
 	}
+	record := mapMeditationToMeditationRecord(meditation)
 	params := &dynamodb.DeleteItemInput{
 		TableName: aws.String(store.tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"pk": {
-				S: aws.String(userId),
+				S: &record.Pk,
 			},
 			"sk": {
-				S: aws.String(meditation.Name + "/" + meditation.ID),
+				S: &record.Sk,
 			},
 		},
 	}
@@ -278,7 +206,7 @@ func (store DynamoMeditationStore) DeleteMeditation(userId string, id string) er
 }
 
 func (store DynamoMeditationStore) UpdateMeditation(m Meditation) error {
-	oldMeditation, err := store.GetMeditation(m.UserId, m.ID)
+	oldMeditation, err := store.GetMeditation(m.ID)
 	if err != nil {
 		return err
 	}
