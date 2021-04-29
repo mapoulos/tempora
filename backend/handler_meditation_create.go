@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -21,7 +20,6 @@ func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 
 	err := json.Unmarshal([]byte(req.Body), &input)
 	if err != nil {
-		fmt.Println("Could not parse body")
 		errorMessage := "Invalid request " + err.Error()
 		bodyError := map[string]string{
 			"error": errorMessage,
