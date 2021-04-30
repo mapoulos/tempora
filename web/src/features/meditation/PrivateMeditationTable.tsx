@@ -27,6 +27,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Menu,
+  MenuItem,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import DeleteIcon from "@material-ui/icons/Delete";
@@ -37,6 +39,8 @@ import { Meditation } from "./meditationService";
 import { selectIdToken } from "../user/userSlice";
 import { IdToken, useAuth0 } from "@auth0/auth0-react";
 import { AppDispatch } from "../../app/store";
+import { keys } from "@material-ui/core/styles/createBreakpoints";
+import { ArrowDropDown, ExpandMore } from "@material-ui/icons";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -82,12 +86,15 @@ export function PrivateMeditationTable() {
   const privateMeditations = useSelector(selectPrivateMeditations);
   const idToken = useSelector(selectIdToken);
   const { isAuthenticated } = useAuth0();
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null)
+
   const dispatch = useDispatch<AppDispatch>();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedMeditation, setSelectedMeditation] = useState(
     {} as Meditation
   );
+
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -114,10 +121,18 @@ export function PrivateMeditationTable() {
     setIsDeleteDialogOpen(false);
   };
 
-  const handleDeleteDialogOpen = (meditation: Meditation) => {
-    setSelectedMeditation(meditation);
+  const handleDeleteDialogOpen = () => {
     setIsDeleteDialogOpen(true);
   };
+
+  const handleOpen = (evt: React.MouseEvent<HTMLButtonElement>, meditation: Meditation) => {
+    setSelectedMeditation(meditation)
+    setMenuAnchor(evt.currentTarget)
+  }
+
+  const handleClose = () => {
+    setMenuAnchor(null)
+  }
 
   const classes = useStyles();
 
@@ -143,24 +158,20 @@ export function PrivateMeditationTable() {
   const meditationCards = privateMeditations.map((m) => (
     <Grid item xs={12} md={12} key={m._id}>
       <Card>
-        <CardHeader title={m.name} />
+        <CardHeader title={m.name}
+          action={<Button
+            aria-controls="simple-menu"
+            aria-haspopup="true"
+            key={m._id}
+            size="large"
+            onClick={(evt) => { handleOpen(evt, m) }}>
+            <ExpandMore />
+          </Button>
+        } />
         <CardContent>{m.text}</CardContent>
         <CardActions className={classes.cardActions}>
-          <Button
-            variant="outlined"
-            component={RouterLink}
-            to={`/meditations/${m._id}/update`}
-          >
-            <EditIcon />
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              handleDeleteDialogOpen(m);
-            }}
-          >
-            <DeleteIcon />
-          </Button>
+
+
           <Button
             variant="outlined"
             onClick={() => chooseMeditation(m)}
@@ -175,7 +186,6 @@ export function PrivateMeditationTable() {
   ));
 
   return (
-    // <Paper square>
     <React.Fragment>
       <div className={classes.toolbar} />
       <AppBar position="static" className={classes.appBar}>
@@ -192,6 +202,28 @@ export function PrivateMeditationTable() {
           </Button>
         </Toolbar>
       </AppBar>
+      <Menu id={`edit-menu`} anchorEl={menuAnchor} open={Boolean(menuAnchor)} keepMounted onClose={handleClose}
+        getContentAnchorEl={null}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        transformOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <MenuItem><Button
+          
+          style={{width: 120}}
+          component={RouterLink}
+          to={`/meditations/${selectedMeditation._id}/update`}
+        >
+          Edit
+        </Button></MenuItem>
+        <MenuItem><Button
+          style={{width: 120}}
+          onClick={() => {
+            handleDeleteDialogOpen();
+          }}
+        >
+          Delete
+        </Button></MenuItem>
+      </Menu>
       <Grid container className={classes.selectorGrid} spacing={1}>
         {meditationCards}
       </Grid>

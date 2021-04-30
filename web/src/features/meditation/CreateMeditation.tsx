@@ -194,7 +194,7 @@ export const CreateOrUpdateMeditation = () => {
     <React.Fragment>
       <div className={classes.toolbar} />
       <Card>
-        <CardHeader title="Create Meditation" />
+        <CardHeader title={isUpdate ? "Update Meditation" : "Create Meditation"} />
         <CardContent>
           <form className={classes.formRoot} autoComplete="off">
             <Grid container className={classes.gridContainer}>

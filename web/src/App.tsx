@@ -164,7 +164,7 @@ function App(props: WithWidth) {
                     to="/meditations"
                     onClick={() => toggleDrawer()}
                   >
-                    Meditations
+                    Public Meditations
                   </Button>
                 </ListItemText>
               </ListItem>

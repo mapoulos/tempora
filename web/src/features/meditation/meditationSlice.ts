@@ -93,19 +93,19 @@ export const fetchPublicMeditationsThunk = (): ThunkAction<
   unknown,
   AnyAction
 > => async (dispatch) => {
-    const meditations = await fetchPublicMeditations();
-    dispatch(setPublicMeditations(meditations));
-    dispatch(setCurrentMeditation(meditations[0]));
-    dispatch(setIsPublicMeditationsLoading(false));
+  const meditations = await fetchPublicMeditations();
+  dispatch(setPublicMeditations(meditations));
+  dispatch(setCurrentMeditation(meditations[0]));
+  dispatch(setIsPublicMeditationsLoading(false));
 
 };
 
 export const fetchPrivateMeditationsThunk = (
   token: IdToken
 ): ThunkAction<Promise<void>, RootState, unknown, AnyAction> => async (dispatch) => {
-    const meditations = await fetchPrivateMeditations(token);
-    dispatch(setPrivateMeditations(meditations));
-    dispatch(setIsPrivateMeditationsLoading(false));
+  const meditations = await fetchPrivateMeditations(token);
+  dispatch(setPrivateMeditations(meditations));
+  dispatch(setIsPrivateMeditationsLoading(false));
 };
 
 export const createMeditationThunk = (
@@ -115,34 +115,34 @@ export const createMeditationThunk = (
   dispatch,
   getState
 ): Promise<Meditation> => {
-  const newMeditation = await createMeditation(meditation, idToken);
-  const existingMeditations = getState().meditation.private.meditations;
-  dispatch(setPrivateMeditations([newMeditation, ...existingMeditations]));
-  if (newMeditation.isPublic) {
-	  await dispatch(fetchPublicMeditationsThunk())
-  }
-  return newMeditation;
-};
+    const newMeditation = await createMeditation(meditation, idToken);
+    const existingMeditations = getState().meditation.private.meditations;
+    dispatch(setPrivateMeditations([newMeditation, ...existingMeditations]));
+    if (newMeditation.isPublic) {
+      await dispatch(fetchPublicMeditationsThunk())
+    }
+    return newMeditation;
+  };
 
 export const updateMeditationThunk = (
-	meditation: UpdateMeditationInput,
-	idToken: IdToken
-  ): ThunkAction<Promise<Meditation>, RootState, unknown, AnyAction> => async (
-	dispatch,
-	getState
-  ): Promise<Meditation> => {
-	const newMeditation = await updateMeditation(meditation, idToken);
-	const existingMeditations = getState().meditation.private.meditations;
-	const i = existingMeditations.findIndex((m) => m._id === meditation._id)
+  meditation: UpdateMeditationInput,
+  idToken: IdToken
+): ThunkAction<Promise<Meditation>, RootState, unknown, AnyAction> => async (
+  dispatch,
+  getState
+): Promise<Meditation> => {
+    const newMeditation = await updateMeditation(meditation, idToken);
+    const existingMeditations = getState().meditation.private.meditations;
+    const i = existingMeditations.findIndex((m) => m._id === meditation._id)
 
-	if (i > 0) {
-		existingMeditations[i] = newMeditation
-		dispatch(setPrivateMeditations(existingMeditations));
-	}
-	if (newMeditation.isPublic) {
-		await dispatch(fetchPublicMeditationsThunk())
-	}
-	return newMeditation;
+    if (i >= 0) {
+      const privateMeditations = [...existingMeditations.slice(0, i), ...existingMeditations.slice(i + 1)]
+      dispatch(setPrivateMeditations(privateMeditations));
+    }
+    if (newMeditation.isPublic) {
+      await dispatch(fetchPublicMeditationsThunk())
+    }
+    return newMeditation;
   };
 
 export const deleteMeditationThunk = (
@@ -152,22 +152,22 @@ export const deleteMeditationThunk = (
   dispatch,
   getState
 ): Promise<void> => {
-  await deleteMeditationById(meditationId, idToken);
-  const existingPrivateMeditations = getState().meditation.private.meditations;
-  const existingPublicMeditations = getState().meditation.public.meditations;
+    await deleteMeditationById(meditationId, idToken);
+    const existingPrivateMeditations = getState().meditation.private.meditations;
+    const existingPublicMeditations = getState().meditation.public.meditations;
 
-  const newPrivateMeditations = existingPrivateMeditations.filter((m) => m._id !== meditationId)
-  const newPublicMeditations = existingPublicMeditations.filter((m) => m._id !== meditationId)
-  dispatch(setPrivateMeditations(newPrivateMeditations))
-  dispatch(setPublicMeditations(newPublicMeditations))
-};
+    const newPrivateMeditations = existingPrivateMeditations.filter((m) => m._id !== meditationId)
+    const newPublicMeditations = existingPublicMeditations.filter((m) => m._id !== meditationId)
+    dispatch(setPrivateMeditations(newPrivateMeditations))
+    dispatch(setPublicMeditations(newPublicMeditations))
+  };
 
 export const updateSessionLength = (
   durationInMillis: number
 ): ThunkAction<void, RootState, unknown, AnyAction> => async (dispatch) => {
   try {
     updateSessionLengthInLocalStorage(durationInMillis);
-  } catch (error) {}
+  } catch (error) { }
   dispatch(setSessionLengthInMilliseconds(durationInMillis));
 };
 
