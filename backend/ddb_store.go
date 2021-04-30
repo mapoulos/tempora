@@ -308,6 +308,7 @@ func (store DynamoMeditationStore) GetMeditationsByIds(mIDs []string) ([]Meditat
 
 	results := make([][]map[string]*dynamodb.AttributeValue, len(batchedMeditations))
 	wg := sync.WaitGroup{}
+	// probably should map this to a params list, to make cleaner. doing too much in this loop
 	for batch, meditationIDs := range batchedMeditations {
 		keys := make([]map[string]*dynamodb.AttributeValue, len(meditationIDs))
 		for i, id := range meditationIDs {
