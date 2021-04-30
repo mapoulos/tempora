@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -18,6 +19,19 @@ type MeditationRecord struct {
 	Meditation Meditation `dynamodbav:"meditation"`
 }
 
+type SequenceRecord struct {
+	Pk       string      `dynamodbav:"pk"`
+	Sk       string      `dynamodbav:"sk"`
+	Ppk      string      `dynamodbav:"ppk"`
+	Pppk     string      `dynamodbav:"pppk"`
+	Sequence SequenceDAO `dynamodbav:"seqDAO"`
+}
+
+type SequenceDAO struct {
+	Sequence      Sequence `dynamodbav:"sequence"`
+	MeditationIDs []string `dynamodbav:"meditationIds"`
+}
+
 type MeditationStore interface {
 	SaveMeditation(m Meditation) error
 	ListMeditations(userId string) ([]Meditation, error)
@@ -25,6 +39,8 @@ type MeditationStore interface {
 	GetMeditation(id string) (Meditation, error)
 	DeleteMeditation(id string) error
 	UpdateMeditation(m Meditation) error
+
+	SaveSequence(s Sequence) error
 }
 
 type DynamoMeditationStore struct {
@@ -43,15 +59,18 @@ func NewDynamoMeditationStore(tableName string, config *aws.Config) DynamoMedita
 	return dynamoStore
 }
 
+func ternary(condition bool, ifTrue string, ifFalse string) string {
+	if condition {
+		return ifTrue
+	}
+	return ifFalse
+}
+
 func mapMeditationToMeditationRecord(m Meditation) MeditationRecord {
 	pk := "med#" + m.ID
 	sk := pk
 	ppk := m.UserId
-	pppk := "private"
-
-	if m.Public {
-		pppk = "public"
-	}
+	pppk := ternary(m.Public, "public", "private")
 
 	return MeditationRecord{
 		Pk:         pk,
@@ -60,6 +79,30 @@ func mapMeditationToMeditationRecord(m Meditation) MeditationRecord {
 		Pppk:       pppk,
 		Meditation: m,
 	}
+}
+
+func mapSequenceToSequenceRecord(s Sequence) *SequenceRecord {
+	pk := "seq#" + s.ID
+	sk := pk
+	ppk := s.UserId
+	pppk := "private"
+
+	meditationIDs := make([]string, len(s.Meditations))
+	for i, m := range s.Meditations {
+		meditationIDs[i] = m.ID
+	}
+
+	return &SequenceRecord{
+		Pk:   pk,
+		Sk:   sk,
+		Ppk:  ppk,
+		Pppk: pppk,
+		Sequence: SequenceDAO{
+			Sequence:      s,
+			MeditationIDs: meditationIDs,
+		},
+	}
+
 }
 
 func (store DynamoMeditationStore) SaveMeditation(meditation Meditation) error {
@@ -83,7 +126,6 @@ func (store DynamoMeditationStore) SaveMeditation(meditation Meditation) error {
 }
 
 func (store DynamoMeditationStore) ListMeditations(userId string) ([]Meditation, error) {
-
 	params := &dynamodb.QueryInput{
 		TableName:              aws.String(store.tableName),
 		IndexName:              aws.String("gs2"),
@@ -118,7 +160,6 @@ func (store DynamoMeditationStore) ListMeditations(userId string) ([]Meditation,
 }
 
 func (store DynamoMeditationStore) ListPublicMeditations() ([]Meditation, error) {
-
 	params := &dynamodb.QueryInput{
 		TableName:              aws.String(store.tableName),
 		KeyConditionExpression: aws.String("pppk = :public"),
@@ -149,8 +190,6 @@ func (store DynamoMeditationStore) ListPublicMeditations() ([]Meditation, error)
 		meditations[i] = m.Meditation
 	}
 
-	// meditations := []Meditation{}
-
 	return meditations, nil
 }
 
@@ -173,10 +212,10 @@ func (store DynamoMeditationStore) GetMeditation(id string) (Meditation, error) 
 
 	resp, err := store.svc.GetItem(params)
 	if err != nil {
-		return Meditation{}, errors.New("Error with call to dynamodb on GetMeditation")
+		return Meditation{}, errors.New("error with call to dynamodb on getMeditation")
 	}
 	var meditationRecord MeditationRecord
-	err = dynamodbattribute.UnmarshalMap(resp.Item, &meditationRecord)
+	dynamodbattribute.UnmarshalMap(resp.Item, &meditationRecord)
 
 	return meditationRecord.Meditation, nil
 }
@@ -215,47 +254,166 @@ func (store DynamoMeditationStore) UpdateMeditation(m Meditation) error {
 		return errors.New("No meditation with " + m.ID + " found.")
 	}
 
-	if m.Name == oldMeditation.Name {
-		err = store.SaveMeditation(m)
-	} else {
-		mAV := mapMeditationToMeditationRecord(m)
-
-		newItem, err := dynamodbattribute.MarshalMap(mAV)
-
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-
-		params := &dynamodb.TransactWriteItemsInput{
-			TransactItems: []*dynamodb.TransactWriteItem{
-				{
-					Put: &dynamodb.Put{
-						TableName: &store.tableName,
-						Item:      newItem,
-					},
-				},
-				{
-					Delete: &dynamodb.Delete{
-						TableName: &store.tableName,
-						Key: map[string]*dynamodb.AttributeValue{
-							"pk": {
-								S: aws.String(oldMeditation.UserId),
-							},
-							"sk": {
-								S: aws.String(oldMeditation.Name + "/" + oldMeditation.ID),
-							},
-						},
-					},
-				},
-			},
-		}
-		store.svc.TransactWriteItems(params)
-
-	}
-
+	err = store.SaveMeditation(m)
 	if err != nil {
 		return err
 	}
-
 	return nil
+}
+
+func (store DynamoMeditationStore) SaveSequence(s Sequence) error {
+	sequenceRecord := mapSequenceToSequenceRecord(s)
+	sequenceItem, err := dynamodbattribute.MarshalMap(sequenceRecord)
+	if err != nil {
+		return err
+	}
+	params := &dynamodb.PutItemInput{
+		TableName: &store.tableName,
+		Item:      sequenceItem,
+	}
+	_, err = store.svc.PutItem(params)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func chunkMeditationIDs(meditationIDs []string) [][]string {
+	MAX_CHUNK_SLICE := 100
+	meditationIDCount := len(meditationIDs)
+	chunks := len(meditationIDs) / MAX_CHUNK_SLICE
+	if meditationIDCount%MAX_CHUNK_SLICE != 0 {
+		chunks++
+	}
+
+	if chunks == 1 {
+		return [][]string{meditationIDs}
+	}
+
+	batches := make([][]string, chunks)
+
+	for i := range batches {
+		batches[i] = make([]string, MAX_CHUNK_SLICE)
+	}
+	for i, id := range meditationIDs {
+		batchesIdx := i % chunks
+		subIdx := i / chunks
+		batches[batchesIdx][subIdx] = id
+	}
+	return batches
+}
+
+func (store DynamoMeditationStore) GetMeditationsByIds(mIDs []string) ([]Meditation, error) {
+	batchedMeditations := chunkMeditationIDs(mIDs)
+
+	results := make([][]map[string]*dynamodb.AttributeValue, len(batchedMeditations))
+	wg := sync.WaitGroup{}
+	for batch, meditationIDs := range batchedMeditations {
+		keys := make([]map[string]*dynamodb.AttributeValue, len(meditationIDs))
+		for i, id := range meditationIDs {
+			m := Meditation{
+				ID: id,
+			}
+			r := mapMeditationToMeditationRecord(m)
+
+			keys[i] = map[string]*dynamodb.AttributeValue{
+				"pk": {
+					S: &r.Pk,
+				},
+				"sk": {
+					S: &r.Sk,
+				},
+			}
+		}
+
+		params := &dynamodb.BatchGetItemInput{
+			RequestItems: map[string]*dynamodb.KeysAndAttributes{
+				store.tableName: {
+					Keys: keys,
+				},
+			},
+		}
+
+		wg.Add(1)
+		go func(params *dynamodb.BatchGetItemInput, batchIdx int, wg *sync.WaitGroup) {
+			resp, err := store.svc.BatchGetItem(params)
+			if err != nil {
+				results[batchIdx] = []map[string]*dynamodb.AttributeValue{}
+			}
+			r := resp.Responses[store.tableName]
+			results[batchIdx] = r
+			wg.Done()
+		}(params, batch, &wg)
+
+	}
+	wg.Wait()
+	meditations := []Meditation{}
+	for _, responseBatch := range results {
+		var meditationRecords []MeditationRecord
+		err := dynamodbattribute.UnmarshalListOfMaps(responseBatch, &meditationRecords)
+		if err != nil {
+			return []Meditation{}, err
+		}
+		batchedMeditations := make([]Meditation, len(responseBatch))
+		for i, r := range meditationRecords {
+			batchedMeditations[i] = r.Meditation
+		}
+		meditations = append(meditations, batchedMeditations...)
+	}
+
+	return meditations, nil
+}
+
+func (store DynamoMeditationStore) GetSequenceById(sequenceId string) (Sequence, error) {
+	// 1) get the sequence
+	s := Sequence{
+		ID: sequenceId,
+	}
+	r := mapSequenceToSequenceRecord(s)
+	params := &dynamodb.GetItemInput{
+		TableName: &store.tableName,
+		Key: map[string]*dynamodb.AttributeValue{
+			"pk": {
+				S: &r.Pk,
+			},
+			"sk": {
+				S: &r.Sk,
+			},
+		},
+	}
+	seqResp, err := store.svc.GetItem(params)
+	if err != nil {
+		return Sequence{}, err
+	}
+
+	// 2) unmarshal the response
+	var sequenceRecord SequenceRecord
+	err = dynamodbattribute.UnmarshalMap(seqResp.Item, &sequenceRecord)
+	if err != nil {
+		return Sequence{}, err
+	}
+
+	// 3) fetch all the meditations with Batch Get Item
+	meditationIDs := sequenceRecord.Sequence.MeditationIDs
+	meditations, err := store.GetMeditationsByIds(meditationIDs)
+	if err != nil {
+		return Sequence{}, err
+	}
+	if len(meditations) != len(meditationIDs) {
+		return Sequence{}, errors.New("MeditationIDs in sequenceRecord do not have same length as those from GetMeditationsByIds")
+	}
+
+	// 4) make the order of the meditations match what we have in the record
+	fetchedSequence := sequenceRecord.Sequence.Sequence
+	sequenceOrder := make(map[string]int)
+	for i, mID := range sequenceRecord.Sequence.MeditationIDs {
+		sequenceOrder[mID] = i
+	}
+	reorderedMeditations := make([]Meditation, len(meditationIDs))
+	for _, m := range meditations {
+		newIdx := sequenceOrder[m.ID]
+		reorderedMeditations[newIdx] = m
+	}
+	fetchedSequence.Meditations = reorderedMeditations
+	return fetchedSequence, nil
 }
