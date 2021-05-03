@@ -299,6 +299,7 @@ func TestSequences(t *testing.T) {
 			ID:        id,
 			Name:      fmt.Sprintf("Meditation %d", i),
 			Text:      "Meditation Text",
+			URL:       "http://mp3.com/1.mp3",
 			Public:    false,
 			UserId:    userId,
 			CreatedAt: now,
@@ -317,7 +318,7 @@ func TestSequences(t *testing.T) {
 	}
 	wg.Wait()
 
-	t.Run("Create a sequence and get a sequence", func(t *testing.T) {
+	t.Run("Create a sequence, get a sequence, delete a sequence", func(t *testing.T) {
 		sequenceId := ksuid.New().String()
 		sequence := Sequence{
 			ID:          sequenceId,
@@ -349,6 +350,19 @@ func TestSequences(t *testing.T) {
 		if diff := deep.Equal(sequence, fetchedSequence); diff != nil {
 			t.Error("Expected fetchedSequence to match original sequence")
 			t.Error(diff)
+		}
+
+		err = store.DeleteSequenceById(sequenceId)
+		if err != nil {
+			t.Error("deletion failed")
+			t.Error(err.Error())
+		}
+	})
+
+	t.Run("Get a nonexistent sequence fails", func(t *testing.T) {
+		_, err := store.GetSequenceById("DOES_NOT_EXIST")
+		if err == nil {
+			t.Error("expected an error for non-existent get, but got nil")
 		}
 	})
 }
