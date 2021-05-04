@@ -93,7 +93,7 @@ func initializeTestingStore(tableName string) *DynamoMeditationStore {
 
 func TestDynamoMeditationStore(t *testing.T) {
 
-	t.Run("Test MemoryStore SaveMeditation", func(t *testing.T) {
+	t.Run("Test DynamoStore SaveMeditation", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
 		store := initializeTestingStore(tableName)
 
@@ -111,7 +111,7 @@ func TestDynamoMeditationStore(t *testing.T) {
 		}
 	})
 
-	t.Run("Test MemoryStore SaveMeditation and Get", func(t *testing.T) {
+	t.Run("Test DynamoStore SaveMeditation and Get", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
 		store := initializeTestingStore(tableName)
 
@@ -195,7 +195,7 @@ func TestDynamoMeditationStore(t *testing.T) {
 		}
 	})
 
-	t.Run("Test Delete", func(t *testing.T) {
+	t.Run("Test Meditation Delete", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
 		store := initializeTestingStore(tableName)
 
@@ -215,14 +215,17 @@ func TestDynamoMeditationStore(t *testing.T) {
 		if err != nil {
 			t.Error("Did not find meditation with ID 0")
 		}
-		store.DeleteMeditation("0")
+		err = store.DeleteMeditation("0")
+		if err != nil {
+			t.Error(err.Error())
+		}
 
 		meditations, err := store.ListMeditations(userId)
 		if err != nil {
 			t.Error("Couldn't list medtations for userId " + userId)
 		}
 		if len(meditations) != numMeditations-1 {
-			t.Errorf("Found %d meditations, Expected %d meditations", len(meditations), numMeditations)
+			t.Errorf("Found %d meditations, Expected %d meditations", len(meditations), numMeditations-1)
 		}
 		if contains(meditations, m) {
 			t.Errorf("Found meditation after deleting it!")
@@ -273,7 +276,7 @@ func TestChunker(t *testing.T) {
 	for i := 0; i < strCount; i++ {
 		strs[i] = strconv.Itoa(i)
 	}
-	batches := chunkMeditationIDs(strs)
+	batches := chunkMeditationIDs(strs, 100)
 	if len(batches) != 10 {
 		t.Errorf("Expected %d batches got %d", 10, len(batches))
 	}
@@ -293,7 +296,7 @@ func TestSequences(t *testing.T) {
 	ids := make([]string, mCount)
 	wg := sync.WaitGroup{}
 	for i := 0; i < mCount; i++ {
-		id := strconv.Itoa(i)
+		id := "seqMed" + strconv.Itoa(i)
 		ids[i] = id
 		m := Meditation{
 			ID:        id,
@@ -318,7 +321,7 @@ func TestSequences(t *testing.T) {
 	}
 	wg.Wait()
 
-	t.Run("Create a sequence, get a sequence, delete a sequence", func(t *testing.T) {
+	t.Run("Create a sequence, get a sequence, update a sequence, delete a sequence", func(t *testing.T) {
 		sequenceId := ksuid.New().String()
 		sequence := Sequence{
 			ID:          sequenceId,
@@ -352,6 +355,20 @@ func TestSequences(t *testing.T) {
 			t.Error(diff)
 		}
 
+		// update the sequence
+		updatedSequence := sequence
+		updatedSequence.Meditations = meditations[0 : mCount/2]
+		err = store.UpdateSequence(updatedSequence)
+		if err != nil {
+			t.Error(err)
+		}
+
+		updatedFetchedSequence, _ := store.GetSequenceById(sequenceId)
+		if len(updatedFetchedSequence.Meditations) != 100 {
+			t.Errorf("did not find 100 updated meditations: %d", len(updatedFetchedSequence.Meditations))
+		}
+
+		// delete the sequence
 		err = store.DeleteSequenceById(sequenceId)
 		if err != nil {
 			t.Error("deletion failed")
@@ -364,6 +381,42 @@ func TestSequences(t *testing.T) {
 		if err == nil {
 			t.Error("expected an error for non-existent get, but got nil")
 		}
+	})
+
+	t.Run("Disallow deletion of meditation if it's in a sequence", func(t *testing.T) {
+		sequenceId := ksuid.New().String()
+		sequence := Sequence{
+			ID:          sequenceId,
+			Name:        "Sequence 1",
+			Description: "A Testing Sequence",
+			ImageURL:    "https://image.url/",
+			Public:      false,
+			UserId:      userId,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Meditations: meditations,
+		}
+		err := store.SaveSequence(sequence)
+		if err != nil {
+			t.Error(err.Error())
+		}
+
+		m := meditations[0]
+		err = store.DeleteMeditation(m.ID)
+		if err == nil {
+			t.Error("should not have allowed meditation to be deleted because it is part of a sequence!")
+		}
+		updatedSequence := sequence
+		updatedSequence.Meditations = meditations[1:]
+		err = store.UpdateSequence(updatedSequence)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		err = store.DeleteMeditation(m.ID)
+		if err != nil {
+			t.Error(err.Error())
+		}
+
 	})
 }
 
@@ -380,7 +433,7 @@ func BenchmarkGetMeditationsByIds(b *testing.B) {
 		id := strconv.Itoa(i)
 		ids[i] = id
 		m := Meditation{
-			ID:        id,
+			ID:        "benchmarkSeq-" + id,
 			Name:      fmt.Sprintf("Meditation %d", i),
 			Text:      "Meditation Text",
 			Public:    false,
@@ -392,11 +445,15 @@ func BenchmarkGetMeditationsByIds(b *testing.B) {
 
 	}
 
+	wg := sync.WaitGroup{}
 	for _, m := range meditations {
-		go func(m Meditation) {
+		wg.Add(1)
+		go func(m Meditation, wg *sync.WaitGroup) {
 			store.SaveMeditation(m)
-		}(m)
+			wg.Done()
+		}(m, &wg)
 	}
+	wg.Done()
 
 	store.GetMeditationsByIds(ids)
 }

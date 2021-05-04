@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,7 +34,7 @@ func createLocalBucket(bucketName string) error {
 	return nil
 }
 
-func putFileInS3(localPath string, bucketName string, key string, config *aws.Config) error {
+func putFileInS3(localPath string, bucketName string, key string, contentType string, config *aws.Config) error {
 	sess, _ := session.NewSession(config)
 	uploader := s3manager.NewUploader(sess)
 
@@ -40,9 +43,10 @@ func putFileInS3(localPath string, bucketName string, key string, config *aws.Co
 		return err
 	}
 	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: &bucketName,
-		Key:    &key,
-		Body:   file,
+		Bucket:      &bucketName,
+		Key:         &key,
+		Body:        file,
+		ContentType: &contentType,
 	})
 
 	if err != nil {
@@ -51,25 +55,44 @@ func putFileInS3(localPath string, bucketName string, key string, config *aws.Co
 	return nil
 }
 
-func handlerTestInit(bucketName string) string {
+func handlerTestInit(bucketName string) (string, string) {
 	// create a bucket for testing
 	awsConfig = getAwsConfig(true)
 	createLocalBucket(bucketName)
 
 	os.Setenv("AUDIO_BUCKET", bucketName)
 
-	// stage a file for creation
+	// stage files for creation
 	uploadKey := "upload/test-file"
-	putFileInS3("../media/evagrius.onprayer.001.mp3", bucketName, uploadKey, awsConfig)
+	imageKey := "upload/test-image"
+	putFileInS3("../media/evagrius.onprayer.001.mp3", bucketName, uploadKey, "audio/mpeg", awsConfig)
+	putFileInS3("../media/evagrius.png", bucketName, imageKey, "image/png", awsConfig)
 
 	// initialize the validator
 	validate = validator.New()
 	validate.RegisterValidation("uploadKey", uploadKeyValidator)
 
-	return uploadKey
+	return uploadKey, imageKey
 }
 
 func buildCreateMeditationRequest(userId string, input CreateMeditationInput) events.APIGatewayV2HTTPRequest {
+	jsonBytes, _ := json.Marshal(input)
+
+	return events.APIGatewayV2HTTPRequest{
+		RequestContext: events.APIGatewayV2HTTPRequestContext{
+			Authorizer: &events.APIGatewayV2HTTPRequestContextAuthorizerDescription{
+				JWT: &events.APIGatewayV2HTTPRequestContextAuthorizerJWTDescription{
+					Claims: map[string]string{
+						"sub": userId,
+					},
+				},
+			},
+		},
+		Body: string(jsonBytes),
+	}
+}
+
+func buildCreateSequenceRequest(userId string, input CreateSequenceInput) events.APIGatewayV2HTTPRequest {
 	jsonBytes, _ := json.Marshal(input)
 
 	return events.APIGatewayV2HTTPRequest{
@@ -122,11 +145,50 @@ func buildUpdateRequest(userId string, meditationId string, input UpdateMeditati
 		},
 	}
 }
+func initMeditationsForSequenceTesting() *DynamoMeditationStore {
+	tableName := uuid.NewV4().String()
+	store := initializeTestingStore(tableName)
+	now := time.Now()
+	userId := "alex"
+
+	mCount := 200
+	meditations := make([]Meditation, mCount)
+	ids := make([]string, mCount)
+	wg := sync.WaitGroup{}
+	for i := 0; i < mCount; i++ {
+		id := strconv.Itoa(i)
+		ids[i] = id
+		m := Meditation{
+			ID:        id,
+			Name:      fmt.Sprintf("Meditation %d", i),
+			Text:      "Meditation Text",
+			URL:       "http://mp3.com/1.mp3",
+			Public:    false,
+			UserId:    userId,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+		meditations[i] = m
+
+	}
+
+	for _, m := range meditations {
+		wg.Add(1)
+		go func(m Meditation, wg *sync.WaitGroup) {
+			store.SaveMeditation(m)
+			wg.Done()
+		}(m, &wg)
+	}
+	wg.Wait()
+
+	return store
+}
 
 func TestHandlers(t *testing.T) {
 	randomUuid := uuid.NewV4().String()
 	bucketName := randomUuid
-	uploadKey := handlerTestInit(bucketName)
+	mp3key, imageKey := handlerTestInit(bucketName)
+	seqStore := initMeditationsForSequenceTesting()
 
 	t.Run("Test CRUD happy flow", func(t *testing.T) {
 		// create a database table for each test
@@ -136,7 +198,7 @@ func TestHandlers(t *testing.T) {
 
 		// Create a meditation
 		input := CreateMeditationInput{
-			UploadKey: uploadKey,
+			UploadKey: mp3key,
 			Name:      "Test Meditaiton",
 			Text:      "Arma virumque cano Troiae qui primus ab oris\nItaliam fato profugus...",
 			Public:    false,
@@ -227,7 +289,7 @@ func TestHandlers(t *testing.T) {
 		/// 3) try to create a meditation with empty Name
 		///
 		input3 := CreateMeditationInput{
-			UploadKey: uploadKey,
+			UploadKey: mp3key,
 			Name:      "",
 			Text:      "Arma virumque cano Troiae qui primus ab oris\nItaliam fato profugus...",
 			Public:    false,
@@ -273,7 +335,7 @@ func TestHandlers(t *testing.T) {
 
 		// Create a meditation
 		input := CreateMeditationInput{
-			UploadKey: uploadKey,
+			UploadKey: mp3key,
 			Name:      "Test Meditaiton",
 			Text:      "Arma virumque cano Troiae qui primus ab oris\nItaliam fato profugus...",
 			Public:    false,
@@ -315,7 +377,7 @@ func TestHandlers(t *testing.T) {
 
 		// Create a meditation
 		input := CreateMeditationInput{
-			UploadKey: uploadKey,
+			UploadKey: mp3key,
 			Name:      "Test Meditaiton",
 			Text:      "Arma virumque cano Troiae qui primus ab oris\nItaliam fato profugus...",
 			Public:    false,
@@ -377,6 +439,23 @@ func TestHandlers(t *testing.T) {
 		if updateResponseNonExistent.StatusCode != 404 {
 			t.Errorf("Expected status code 404, got %d\n", updateResponseNonExistent.StatusCode)
 			t.Errorf("%+v\n", updateResponseNonExistent)
+		}
+	})
+
+	t.Run("Sequence Create:", func(t *testing.T) {
+		meditationIds := []string{"1", "2", "3"}
+		input := CreateSequenceInput{
+			Name:          "Test Sequence 1",
+			Description:   "A Test Sequence",
+			UploadKey:     imageKey,
+			Public:        false,
+			MeditationIDs: meditationIds,
+		}
+		req := buildCreateSequenceRequest("alex", input)
+		resp := CreateSequenceHandler(req, seqStore)
+		if resp.StatusCode != 201 {
+			t.Errorf("expected status code 201 but got %d", resp.StatusCode)
+			t.Errorf("%+v", resp)
 		}
 	})
 }

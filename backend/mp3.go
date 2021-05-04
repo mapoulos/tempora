@@ -63,6 +63,61 @@ func ValidateMP3(uploadKey string, config *aws.Config) error {
 	return nil
 }
 
+func ValidateImage(uploadKey string, config *aws.Config) (string, error) {
+	sess, _ := session.NewSession(config)
+
+	svc := s3.New(sess)
+
+	bucket := os.Getenv("AUDIO_BUCKET")
+	headItemRequest := &s3.HeadObjectInput{
+		Bucket: &bucket,
+		Key:    &uploadKey,
+	}
+	resp, err := svc.HeadObject(headItemRequest)
+	if err != nil {
+		return "", err
+	}
+
+	contentType := *resp.ContentType
+	switch contentType {
+	case "image/jpeg":
+		return ".jpg", nil
+	case "image/png":
+		return ".png", nil
+	}
+	return "", errors.New("unknown image type")
+}
+
+func RenameImage(uploadKey string, destKey string, config *aws.Config) error {
+	sess, _ := session.NewSession(config)
+
+	svc := s3.New(sess)
+
+	bucket := os.Getenv("AUDIO_BUCKET")
+	copyObjectInput := s3.CopyObjectInput{
+		Bucket:     &bucket,
+		CopySource: aws.String(bucket + "/" + uploadKey),
+		Key:        &destKey,
+	}
+
+	_, err := svc.CopyObject(&copyObjectInput)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	err = svc.WaitUntilObjectExists(&s3.HeadObjectInput{
+		Bucket: &bucket,
+		Key:    &destKey,
+	})
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func RenameMP3(uploadKey string, destKey string, config *aws.Config) error {
 	sess, _ := session.NewSession(config)
 
