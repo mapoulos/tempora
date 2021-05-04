@@ -48,8 +48,10 @@ func CreateSequenceHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMedi
 	now := time.Now()
 
 	// move the image to public and rename
-	newPath := "public/" + id + fileExt
-	err = RenameMP3(input.UploadKey, newPath, awsConfig)
+	imageName := id + fileExt
+	newPath := "public/" + imageName
+
+	err = RenameImage(input.UploadKey, newPath, awsConfig)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -69,7 +71,7 @@ func CreateSequenceHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMedi
 
 	newSequence := Sequence{
 		ID:          id,
-		ImageURL:    mapUUIDToPublicURL(id),
+		ImageURL:    mapPathSuffixToFullURL(imageName),
 		Name:        input.Name,
 		Description: input.Description,
 		Public:      input.Public,

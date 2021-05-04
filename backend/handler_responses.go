@@ -57,3 +57,14 @@ func entityCreated(msg string) *events.APIGatewayV2HTTPResponse {
 		},
 	}
 }
+
+func successful(msg string) *events.APIGatewayV2HTTPResponse {
+	return &events.APIGatewayV2HTTPResponse{
+		StatusCode:      200,
+		IsBase64Encoded: false,
+		Body:            msg,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+}

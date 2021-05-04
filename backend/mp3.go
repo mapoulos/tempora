@@ -155,7 +155,7 @@ func mapUUIDToPublicURL(uuid string) string {
 	return "https://" + publicUrlBase + "/" + uuid + ".mp3"
 }
 
-func mapMp3PathSuffixToFullURL(suffix string) string {
+func mapPathSuffixToFullURL(suffix string) string {
 	publicUrlBase := os.Getenv("PUBLIC_AUDIO_BASE")
 	return "https://" + publicUrlBase + "/" + suffix
 }

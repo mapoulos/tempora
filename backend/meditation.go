@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -33,15 +34,28 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 	case "/upload-url":
 		return uploadHandler(req), nil
 	case "/public/meditations":
-		return ListPublicMeditationHandler(req, &store), nil
+		return ListPublicMeditationsHandler(req, &store), nil
+
 	}
 
 	// 1) sequences
 	if strings.HasPrefix(req.RequestContext.HTTP.Path, "/sequences") {
 		switch req.RequestContext.HTTP.Method {
+		case "GET":
+			if _, ok := req.PathParameters["sequenceId"]; ok {
+				return nil, errors.New("not yet implemented /sequences/:seqId")
+			}
+			return ListSequenceHandler(req, &store), nil
 		case "POST":
 			return CreateSequenceHandler(req, &store), nil
 		}
+	}
+
+	if strings.HasPrefix(req.RequestContext.HTTP.Path, "/public/sequences") {
+		if _, ok := req.PathParameters["sequenceId"]; ok {
+			return GetPublicSequenceByIdHandler(req, &store), nil
+		}
+		return ListPublicSequencesHandler(req, &store), nil
 	}
 
 	// 2) meditations
@@ -50,10 +64,9 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 		if _, ok := req.PathParameters["meditationId"]; ok {
 			// a get by medition id
 			return GetMeditationHandler(req, &store), nil
-		} else {
-			// a listMeditations
-			return ListMeditationHandler(req, &store), nil
 		}
+		// a listMeditations
+		return ListMeditationHandler(req, &store), nil
 	case "POST":
 		return CreateMeditationHandler(req, &store), nil
 	case "PATCH":

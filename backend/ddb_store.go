@@ -102,7 +102,8 @@ func mapSequenceToSequenceRecord(s Sequence) *SequenceRecord {
 	pk := "seq#" + s.ID
 	sk := pk
 	ppk := s.UserId
-	pppk := "private"
+	pppk := ternary(s.Public, "public-seq", "")
+
 	updatedAt := time.Now().UTC().Format(time.RFC3339)
 
 	meditationIDs := make([]string, len(s.Meditations))
@@ -574,6 +575,39 @@ func (store DynamoMeditationStore) ListSequencesByUserId(userId string) ([]Seque
 			},
 			":seq": {
 				S: aws.String("seq#"),
+			},
+		},
+	}
+	resp, err := store.svc.Query(listSeqQuery)
+	if err != nil {
+		return []Sequence{}, err
+	}
+	seqRecs := make([]SequenceRecord, *resp.Count)
+	err = dynamodbattribute.UnmarshalListOfMaps(resp.Items, &seqRecs)
+	if err != nil {
+		return []Sequence{}, err
+	}
+
+	seqs := make([]Sequence, len(seqRecs))
+
+	for i, r := range seqRecs {
+		seqs[i] = r.Sequence.Sequence
+	}
+
+	return seqs, nil
+}
+
+func (store DynamoMeditationStore) ListPublicSequences() ([]Sequence, error) {
+	listSeqQuery := &dynamodb.QueryInput{
+		TableName:              &store.tableName,
+		KeyConditionExpression: aws.String("#pppk = :public"),
+		IndexName:              aws.String("gs3"),
+		ExpressionAttributeNames: map[string]*string{
+			"#pppk": aws.String("pppk"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":public": {
+				S: aws.String("public-seq"),
 			},
 		},
 	}

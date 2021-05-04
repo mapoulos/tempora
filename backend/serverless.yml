@@ -85,8 +85,18 @@ functions:
           authorizer: serviceAuthorizer
       - httpApi:
           path: /sequences
+          method: get
+          authorizer: serviceAuthorizer
+      - httpApi:
+          path: /sequences
           method: post
           authorizer: serviceAuthorizer
+      - httpApi:
+          path: /public/sequences
+          method: get
+      - httpApi:
+          path: /public/sequences/{sequenceId}
+          method: get
 
 # you can add CloudFormation resource templates here
 resources:

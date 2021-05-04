@@ -285,17 +285,14 @@ func TestChunker(t *testing.T) {
 	}
 }
 
-func TestSequences(t *testing.T) {
-	tableName := uuid.NewV4().String()
-	store := initializeTestingStore(tableName)
+func createMeditations(count int, store *DynamoMeditationStore) []Meditation {
 	now := time.Now()
 	userId := "alex"
 
-	mCount := 200
-	meditations := make([]Meditation, mCount)
-	ids := make([]string, mCount)
+	meditations := make([]Meditation, count)
+	ids := make([]string, count)
 	wg := sync.WaitGroup{}
-	for i := 0; i < mCount; i++ {
+	for i := 0; i < count; i++ {
 		id := "seqMed" + strconv.Itoa(i)
 		ids[i] = id
 		m := Meditation{
@@ -320,8 +317,20 @@ func TestSequences(t *testing.T) {
 		}(m, &wg)
 	}
 	wg.Wait()
+	return meditations
+}
+
+func TestSequences(t *testing.T) {
 
 	t.Run("Create a sequence, get a sequence, update a sequence, delete a sequence", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		now := time.Now()
+		userId := "alex"
+
+		meditations := createMeditations(10, store)
+		mCount := len(meditations)
+
 		sequenceId := ksuid.New().String()
 		sequence := Sequence{
 			ID:          sequenceId,
@@ -364,7 +373,7 @@ func TestSequences(t *testing.T) {
 		}
 
 		updatedFetchedSequence, _ := store.GetSequenceById(sequenceId)
-		if len(updatedFetchedSequence.Meditations) != 100 {
+		if len(updatedFetchedSequence.Meditations) != mCount/2 {
 			t.Errorf("did not find 100 updated meditations: %d", len(updatedFetchedSequence.Meditations))
 		}
 
@@ -377,6 +386,8 @@ func TestSequences(t *testing.T) {
 	})
 
 	t.Run("Get a nonexistent sequence fails", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
 		_, err := store.GetSequenceById("DOES_NOT_EXIST")
 		if err == nil {
 			t.Error("expected an error for non-existent get, but got nil")
@@ -384,6 +395,12 @@ func TestSequences(t *testing.T) {
 	})
 
 	t.Run("Disallow deletion of meditation if it's in a sequence", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		now := time.Now()
+		userId := "alex"
+
+		meditations := createMeditations(3, store)
 		sequenceId := ksuid.New().String()
 		sequence := Sequence{
 			ID:          sequenceId,
@@ -421,6 +438,11 @@ func TestSequences(t *testing.T) {
 
 	t.Run("List meditations happy path", func(t *testing.T) {
 		localUserId := ksuid.New().String()
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		now := time.Now()
+
+		meditations := createMeditations(15, store)
 		numSeqs := 3
 		for i := 0; i < numSeqs; i++ {
 			err := store.SaveSequence(Sequence{
@@ -432,7 +454,7 @@ func TestSequences(t *testing.T) {
 				UserId:      localUserId,
 				CreatedAt:   now,
 				UpdatedAt:   now,
-				Meditations: meditations[i*10 : i*10+5],
+				Meditations: meditations[i*5 : i*5+5],
 			})
 			if err != nil {
 				t.Error(err.Error())
