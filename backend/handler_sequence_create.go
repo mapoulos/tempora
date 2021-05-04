@@ -55,6 +55,11 @@ func CreateSequenceHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMedi
 	}
 
 	meditations, err := store.GetMeditationsByIds(input.MeditationIDs)
+	for _, m := range meditations {
+		if m.UserId != userId {
+			return badRequest("one or more of the meditationIDs does not exist")
+		}
+	}
 	if err != nil {
 		return internalServerError(err.Error())
 	}

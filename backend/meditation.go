@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -27,6 +28,7 @@ func getAwsConfig(local bool) *aws.Config {
 func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
 	store := NewDynamoMeditationStore(os.Getenv("DDB_TABLE"), awsConfig)
 
+	// 0) miscellaneous
 	switch req.RequestContext.HTTP.Path {
 	case "/upload-url":
 		return uploadHandler(req), nil
@@ -34,6 +36,15 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 		return ListPublicMeditationHandler(req, &store), nil
 	}
 
+	// 1) sequences
+	if strings.HasPrefix(req.RequestContext.HTTP.Path, "/sequences") {
+		switch req.RequestContext.HTTP.Method {
+		case "POST":
+			return CreateSequenceHandler(req, &store), nil
+		}
+	}
+
+	// 2) meditations
 	switch req.RequestContext.HTTP.Method {
 	case "GET":
 		if _, ok := req.PathParameters["meditationId"]; ok {

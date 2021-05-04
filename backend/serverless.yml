@@ -83,6 +83,10 @@ functions:
           path: /upload-url
           method: get
           authorizer: serviceAuthorizer
+      - httpApi:
+          path: /sequences
+          method: post
+          authorizer: serviceAuthorizer
 
 # you can add CloudFormation resource templates here
 resources:
