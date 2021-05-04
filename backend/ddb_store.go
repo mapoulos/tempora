@@ -559,6 +559,43 @@ func (store DynamoMeditationStore) DeleteSequenceById(sequenceId string) error {
 	return nil
 }
 
+func (store DynamoMeditationStore) ListSequencesByUserId(userId string) ([]Sequence, error) {
+	listSeqQuery := &dynamodb.QueryInput{
+		TableName:              &store.tableName,
+		KeyConditionExpression: aws.String("#ppk = :userId and begins_with(#sk, :seq)"),
+		IndexName:              aws.String("gs2"),
+		ExpressionAttributeNames: map[string]*string{
+			"#ppk": aws.String("ppk"),
+			"#sk":  aws.String("sk"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":userId": {
+				S: &userId,
+			},
+			":seq": {
+				S: aws.String("seq#"),
+			},
+		},
+	}
+	resp, err := store.svc.Query(listSeqQuery)
+	if err != nil {
+		return []Sequence{}, err
+	}
+	seqRecs := make([]SequenceRecord, *resp.Count)
+	err = dynamodbattribute.UnmarshalListOfMaps(resp.Items, &seqRecs)
+	if err != nil {
+		return []Sequence{}, err
+	}
+
+	seqs := make([]Sequence, len(seqRecs))
+
+	for i, r := range seqRecs {
+		seqs[i] = r.Sequence.Sequence
+	}
+
+	return seqs, nil
+}
+
 func chunkMeditationIDs(meditationIDs []string, chunkSize int) [][]string {
 	MAX_CHUNK_SLICE := chunkSize
 	meditationIDCount := len(meditationIDs)

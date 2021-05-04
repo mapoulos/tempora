@@ -418,6 +418,37 @@ func TestSequences(t *testing.T) {
 		}
 
 	})
+
+	t.Run("List meditations happy path", func(t *testing.T) {
+		localUserId := ksuid.New().String()
+		numSeqs := 3
+		for i := 0; i < numSeqs; i++ {
+			err := store.SaveSequence(Sequence{
+				ID:          "seq-" + strconv.Itoa(i),
+				Name:        "Sequence " + strconv.Itoa(i),
+				Description: "A Testing Sequence",
+				ImageURL:    "https://image.url/",
+				Public:      false,
+				UserId:      localUserId,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+				Meditations: meditations[i*10 : i*10+5],
+			})
+			if err != nil {
+				t.Error(err.Error())
+			}
+		}
+		retrievedSeqs, err := store.ListSequencesByUserId(localUserId)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		expectedLen := numSeqs
+		actualLen := len(retrievedSeqs)
+		if expectedLen != actualLen {
+			t.Errorf("Expected %d sequences, but got %d sequences", expectedLen, actualLen)
+		}
+	})
+
 }
 
 func BenchmarkGetMeditationsByIds(b *testing.B) {
