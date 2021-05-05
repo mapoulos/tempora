@@ -52,6 +52,8 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 			return UpdateSequenceHandler(req, &store), nil
 		case "PATCH":
 			return UpdateSequenceHandler(req, &store), nil
+		case "DELETE":
+			return DeleteSequenceByIdHandler(req, &store), nil
 		}
 
 	}

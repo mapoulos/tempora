@@ -100,6 +100,10 @@ functions:
           method: put
           authorizer: serviceAuthorizer
       - httpApi:
+          path: /sequences/{sequenceId}
+          method: delete
+          authorizer: serviceAuthorizer
+      - httpApi:
           path: /sequences
           method: post
           authorizer: serviceAuthorizer

@@ -30,7 +30,7 @@ type Sequence struct {
 	Name        string       `json:"name"`
 	Description string       `json:"description"`
 	Public      bool         `json:"isPublic"`
-	Meditations []Meditation `json:"meditations" dynamodbav:"-"` // stored as a list of strings instead
+	Meditations []Meditation `json:"meditations,omitempty" dynamodbav:"-"` // stored as a list of strings instead
 }
 
 type CreateMeditationInput struct {

@@ -525,6 +525,41 @@ func TestHandlers(t *testing.T) {
 		}
 	})
 
+	t.Run("Sequence Delete:", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		userId := "testUser"
+		meditations := createMeditations(10, userId, store)
+		meditationIds := make([]string, len(meditations))
+		for i, m := range meditations {
+			meditationIds[i] = m.ID
+		}
+
+		seq := Sequence{
+			ID:          "1",
+			Name:        "Test Sequence",
+			Description: "Description of a sequence",
+			UserId:      userId,
+			Meditations: meditations,
+		}
+		err := store.SaveSequence(seq)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		req := buildGetOrDeleteSequenceRequest(userId, seq.ID)
+		resp := DeleteSequenceByIdHandler(req, store)
+		if resp.StatusCode != 204 {
+			t.Errorf("expected status code 204 but got %d", resp.StatusCode)
+			t.Errorf("%+v", resp)
+		}
+		_, err = store.GetSequenceById(seq.ID)
+		if err == nil {
+			t.Error("found sequence after deleting!")
+		}
+	})
+
 	t.Run("Sequence Update without upload key:", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
 		store := initializeTestingStore(tableName)
