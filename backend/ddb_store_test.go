@@ -388,6 +388,40 @@ func TestSequences(t *testing.T) {
 		}
 	})
 
+	t.Run("Create a sequence with a duplicate med ID succeeds", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		now := time.Now()
+		userId := "alex"
+
+		meditations := createMeditations(2, "alex", store)
+
+		sequenceId := ksuid.New().String()
+		sequence := Sequence{
+			ID:          sequenceId,
+			Name:        "Sequence 1",
+			Description: "A Testing Sequence",
+			ImageURL:    "https://image.url/",
+			Public:      false,
+			UserId:      userId,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Meditations: append(meditations, meditations[0]),
+		}
+		err := store.SaveSequence(sequence)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		fetchedSequence, err := store.GetSequenceById(sequenceId)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		if diff := deep.Equal(sequence, fetchedSequence); diff != nil {
+			t.Error(diff)
+		}
+
+	})
+
 	t.Run("Get a nonexistent sequence fails", func(t *testing.T) {
 		tableName := uuid.NewV4().String()
 		store := initializeTestingStore(tableName)

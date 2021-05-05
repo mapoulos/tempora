@@ -623,11 +623,11 @@ func TestHandlers(t *testing.T) {
 		}
 
 		updatedSequenceInput := UpdateSequenceInput{
-			Name:          seq.Name + " - updated",
-			Description:   seq.Description + " - updated",
-			MeditationIDs: meditationIds,
-			// MeditationIDs: append(meditationIds, meditationIds[0]),
-			UploadKey: imageKey,
+			Name:        seq.Name + " - updated",
+			Description: seq.Description + " - updated",
+			// MeditationIDs: meditationIds,
+			MeditationIDs: append(meditationIds, meditationIds[0]),
+			UploadKey:     imageKey,
 		}
 
 		req := buildUpdateSequenceRequest(userId, seq.ID, updatedSequenceInput)

@@ -357,6 +357,20 @@ func (store DynamoMeditationStore) SaveSequence(s Sequence) error {
 	return nil
 }
 
+func dedupIds(ids []string) []string {
+	idMap := make(map[string]bool)
+	for _, id := range ids {
+		idMap[id] = true
+	}
+	deduppedIds := make([]string, len(idMap))
+	i := 0
+	for k := range idMap {
+		deduppedIds[i] = k
+		i++
+	}
+	return deduppedIds
+}
+
 func (store DynamoMeditationStore) updateSequenceMeditationRelationRecords(seqRec *SequenceRecord) error {
 	// 1) delete all existing relation records
 	existingRelationRecordsQuery := &dynamodb.QueryInput{
@@ -414,7 +428,8 @@ func (store DynamoMeditationStore) updateSequenceMeditationRelationRecords(seqRe
 
 	// 2) create the writeRequests for the new relation records
 	MAX_BATCH_WRITE_ITEM_SIZE := 25
-	batchedMeditationIds := chunkMeditationIDs(seqRec.Sequence.MeditationIDs, MAX_BATCH_WRITE_ITEM_SIZE)
+	dedupped := dedupIds(seqRec.Sequence.MeditationIDs)
+	batchedMeditationIds := chunkMeditationIDs(dedupped, MAX_BATCH_WRITE_ITEM_SIZE)
 	batchWriteItemParamSlice := make([]*dynamodb.BatchWriteItemInput, len(batchedMeditationIds))
 	for batchIdx, meditationIds := range batchedMeditationIds {
 		items := make([]*dynamodb.WriteRequest, len(meditationIds))
@@ -658,7 +673,8 @@ func chunkMeditationIDs(meditationIDs []string, chunkSize int) [][]string {
 func (store DynamoMeditationStore) GetMeditationsByIds(mIDs []string) ([]Meditation, error) {
 	// 1) split the meditationIDs into chunks of 100
 	MAX_BATCH_GET_ITEMS_SIZE := 100
-	batchedMeditations := chunkMeditationIDs(mIDs, MAX_BATCH_GET_ITEMS_SIZE)
+	deduppedIds := dedupIds(mIDs)
+	batchedMeditations := chunkMeditationIDs(deduppedIds, MAX_BATCH_GET_ITEMS_SIZE)
 
 	// 2) build and collect the batchGetItem requests into a slice
 	batchCount := len(batchedMeditations)
@@ -722,7 +738,18 @@ func (store DynamoMeditationStore) GetMeditationsByIds(mIDs []string) ([]Meditat
 		meditations = append(meditations, batchedMeditations...)
 	}
 
-	return meditations, nil
+	// 5) reorder
+	idToMedMap := make(map[string]Meditation)
+	for _, m := range meditations {
+		idToMedMap[m.ID] = m
+	}
+	reorderedMeditations := make([]Meditation, len(mIDs))
+	for i, m := range mIDs {
+		meditation := idToMedMap[m]
+		reorderedMeditations[i] = meditation
+	}
+
+	return reorderedMeditations, nil
 }
 
 func (store DynamoMeditationStore) GetSequenceById(sequenceId string) (Sequence, error) {
@@ -763,18 +790,7 @@ func (store DynamoMeditationStore) GetSequenceById(sequenceId string) (Sequence,
 	if err != nil {
 		return Sequence{}, err
 	}
-
-	// 4) make the order of the meditations match what we have in the record
 	fetchedSequence := sequenceRecord.Sequence.Sequence
-	idToMedMap := make(map[string]Meditation)
-	for _, m := range meditations {
-		idToMedMap[m.ID] = m
-	}
-	reorderedMeditations := make([]Meditation, len(meditationIDs))
-	for i, m := range meditationIDs {
-		meditation := idToMedMap[m]
-		reorderedMeditations[i] = meditation
-	}
-	fetchedSequence.Meditations = reorderedMeditations
+	fetchedSequence.Meditations = meditations
 	return fetchedSequence, nil
 }
