@@ -88,6 +88,10 @@ functions:
           method: get
           authorizer: serviceAuthorizer
       - httpApi:
+          path: /sequences/{sequenceId}
+          method: get
+          authorizer: serviceAuthorizer
+      - httpApi:
           path: /sequences
           method: post
           authorizer: serviceAuthorizer

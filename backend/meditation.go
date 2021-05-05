@@ -43,7 +43,7 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 		switch req.RequestContext.HTTP.Method {
 		case "GET":
 			if _, ok := req.PathParameters["sequenceId"]; ok {
-				return nil, errors.New("not yet implemented /sequences/:seqId")
+				return GetSequenceByIdHandler(req, &store), nil
 			}
 			return ListSequenceHandler(req, &store), nil
 		case "POST":
@@ -76,7 +76,7 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 	case "DELETE":
 		return DeleteMeditationHandler(req, &store), nil
 	default:
-		return ListMeditationHandler(req, &store), nil
+		return nil, errors.New("no route found")
 	}
 
 }
