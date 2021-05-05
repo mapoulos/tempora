@@ -20,6 +20,19 @@ type Meditation struct {
 	Public bool   `json:"isPublic"`
 }
 
+type Sequence struct {
+	ID        string    `json:"_id"`
+	UserId    string    `json:"_userId"`
+	CreatedAt time.Time `json:"_createdAt"`
+	UpdatedAt time.Time `json:"_updatedAt"`
+
+	ImageURL    string       `json:"imageUrl"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Public      bool         `json:"isPublic"`
+	Meditations []Meditation `json:"meditations,omitempty" dynamodbav:"-"` // stored as a list of strings instead
+}
+
 type CreateMeditationInput struct {
 	UploadKey string `json:"uploadKey" validate:"required,uploadKey"`
 	Name      string `json:"name" validate:"required"`
@@ -32,6 +45,22 @@ type UpdateMeditationInput struct {
 	Name      string `json:"name" validate:"required"`
 	Text      string `json:"text" validate:"required"`
 	Public    bool   `json:"isPublic"`
+}
+
+type CreateSequenceInput struct {
+	UploadKey     string   `json:"uploadKey" validate:"required,uploadKey"`
+	Name          string   `json:"name" validate:"required,excludes=<>"`
+	Description   string   `json:"description" validate:"required"`
+	Public        bool     `json:"isPublic"`
+	MeditationIDs []string `json:"meditationIds"`
+}
+
+type UpdateSequenceInput struct {
+	UploadKey     string   `json:"uploadKey" validate:"uploadKey"`
+	Name          string   `json:"name" validate:"required,excludes=<>"`
+	Description   string   `json:"description" validate:"required"`
+	Public        bool     `json:"isPublic"`
+	MeditationIDs []string `json:"meditationIds"`
 }
 
 func uploadKeyValidator(fl validator.FieldLevel) bool {

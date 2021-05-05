@@ -54,7 +54,7 @@ func UpdateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 		suffix := meditation.ID + "-" + unixTime + ".mp3"
 		newPath := "public/" + suffix
 
-		meditation.URL = mapMp3PathSuffixToFullURL(suffix)
+		meditation.URL = mapPathSuffixToFullURL(suffix)
 		err = RenameMP3(newMeditationInput.UploadKey, newPath, awsConfig)
 		if err != nil {
 			return internalServerError("Could not rename mp3")

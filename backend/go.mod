@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible // indirect
 	github.com/go-playground/validator/v10 v10.5.0 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/go-test/deep v1.0.7
 	github.com/hajimehoshi/go-mp3 v0.3.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
