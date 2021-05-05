@@ -16,7 +16,7 @@ type MeditationRecord struct {
 	Pk         string     `dynamodbav:"pk"`
 	Sk         string     `dynamodbav:"sk"`
 	Ppk        string     `dynamodbav:"ppk"`
-	Pppk       string     `dynamodbav:"pppk"`
+	Pppk       string     `dynamodbav:"pppk,omitempty"`
 	Type       string     `dynamodbav:"type"`
 	UpdatedAt  string     `dynamodbav:"lastUpdated"`
 	Meditation Meditation `dynamodbav:"meditation"`
@@ -26,7 +26,7 @@ type SequenceRecord struct {
 	Pk        string      `dynamodbav:"pk"`
 	Sk        string      `dynamodbav:"sk"`
 	Ppk       string      `dynamodbav:"ppk"`
-	Pppk      string      `dynamodbav:"pppk"`
+	Pppk      string      `dynamodbav:"pppk,omitempty"`
 	Type      string      `dynamodbav:"type"`
 	UpdatedAt string      `dynamodbav:"lastUpdated"`
 	Sequence  SequenceDAO `dynamodbav:"seqDAO"`
@@ -763,20 +763,17 @@ func (store DynamoMeditationStore) GetSequenceById(sequenceId string) (Sequence,
 	if err != nil {
 		return Sequence{}, err
 	}
-	if len(meditations) != len(meditationIDs) {
-		return Sequence{}, errors.New("MeditationIDs in sequenceRecord do not have same length as those from GetMeditationsByIds")
-	}
 
 	// 4) make the order of the meditations match what we have in the record
 	fetchedSequence := sequenceRecord.Sequence.Sequence
-	sequenceOrder := make(map[string]int)
-	for i, mID := range sequenceRecord.Sequence.MeditationIDs {
-		sequenceOrder[mID] = i
+	idToMedMap := make(map[string]Meditation)
+	for _, m := range meditations {
+		idToMedMap[m.ID] = m
 	}
 	reorderedMeditations := make([]Meditation, len(meditationIDs))
-	for _, m := range meditations {
-		newIdx := sequenceOrder[m.ID]
-		reorderedMeditations[newIdx] = m
+	for i, m := range meditationIDs {
+		meditation := idToMedMap[m]
+		reorderedMeditations[i] = meditation
 	}
 	fetchedSequence.Meditations = reorderedMeditations
 	return fetchedSequence, nil

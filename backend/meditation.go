@@ -48,7 +48,12 @@ func handler(req events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPRespon
 			return ListSequenceHandler(req, &store), nil
 		case "POST":
 			return CreateSequenceHandler(req, &store), nil
+		case "PUT":
+			return UpdateSequenceHandler(req, &store), nil
+		case "PATCH":
+			return UpdateSequenceHandler(req, &store), nil
 		}
+
 	}
 
 	if strings.HasPrefix(req.RequestContext.HTTP.Path, "/public/sequences") {

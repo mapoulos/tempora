@@ -109,6 +109,41 @@ func buildCreateSequenceRequest(userId string, input CreateSequenceInput) events
 	}
 }
 
+func buildGetOrDeleteSequenceRequest(userId string, sequenceId string) events.APIGatewayV2HTTPRequest {
+	return events.APIGatewayV2HTTPRequest{
+		RequestContext: events.APIGatewayV2HTTPRequestContext{
+			Authorizer: &events.APIGatewayV2HTTPRequestContextAuthorizerDescription{
+				JWT: &events.APIGatewayV2HTTPRequestContextAuthorizerJWTDescription{
+					Claims: map[string]string{
+						"sub": userId,
+					},
+				},
+			},
+		},
+		PathParameters: map[string]string{
+			"sequenceId": sequenceId,
+		},
+	}
+}
+func buildUpdateSequenceRequest(userId string, sequenceId string, input UpdateSequenceInput) events.APIGatewayV2HTTPRequest {
+	jsonBytes, _ := json.Marshal(input)
+	return events.APIGatewayV2HTTPRequest{
+		RequestContext: events.APIGatewayV2HTTPRequestContext{
+			Authorizer: &events.APIGatewayV2HTTPRequestContextAuthorizerDescription{
+				JWT: &events.APIGatewayV2HTTPRequestContextAuthorizerJWTDescription{
+					Claims: map[string]string{
+						"sub": userId,
+					},
+				},
+			},
+		},
+		PathParameters: map[string]string{
+			"sequenceId": sequenceId,
+		},
+		Body: string(jsonBytes),
+	}
+}
+
 func buildGetOrDeleteRequest(userId string, meditationId string) events.APIGatewayV2HTTPRequest {
 	return events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -456,6 +491,163 @@ func TestHandlers(t *testing.T) {
 		if resp.StatusCode != 201 {
 			t.Errorf("expected status code 201 but got %d", resp.StatusCode)
 			t.Errorf("%+v", resp)
+		}
+	})
+
+	t.Run("Sequence Get:", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		userId := "testUser"
+		meditations := createMeditations(10, userId, store)
+		meditationIds := make([]string, len(meditations))
+		for i, m := range meditations {
+			meditationIds[i] = m.ID
+		}
+
+		seq := Sequence{
+			ID:          "1",
+			Name:        "Test Sequence",
+			Description: "Description of a sequence",
+			UserId:      userId,
+			Meditations: meditations,
+		}
+		err := store.SaveSequence(seq)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		req := buildGetOrDeleteSequenceRequest(userId, seq.ID)
+		resp := GetSequenceByIdHandler(req, store)
+		if resp.StatusCode != 200 {
+			t.Errorf("expected status code 200 but got %d", resp.StatusCode)
+			t.Errorf("%+v", resp)
+		}
+	})
+
+	t.Run("Sequence Update without upload key:", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		userId := "testUser"
+		meditations := createMeditations(10, userId, store)
+		meditationIds := make([]string, len(meditations))
+		for i, m := range meditations {
+			meditationIds[i] = m.ID
+		}
+
+		seq := Sequence{
+			ID:          "1",
+			Name:        "Test Sequence",
+			Description: "Description of a sequence",
+			UserId:      userId,
+			Meditations: meditations,
+		}
+		err := store.SaveSequence(seq)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		updatedSequenceInput := UpdateSequenceInput{
+			Name:          seq.Name + " - updated",
+			Description:   seq.Description + " - updated",
+			MeditationIDs: meditationIds[0 : len(meditations)/2],
+		}
+
+		req := buildUpdateSequenceRequest(userId, seq.ID, updatedSequenceInput)
+		resp := UpdateSequenceHandler(req, store)
+		if resp.StatusCode != 200 {
+			t.Errorf("expected status code 200 but got %d", resp.StatusCode)
+			t.Errorf("%+v", resp)
+		}
+	})
+
+	t.Run("Sequence Update with upload key:", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		userId := "testUser"
+		meditations := createMeditations(10, userId, store)
+		meditationIds := make([]string, len(meditations))
+		for i, m := range meditations {
+			meditationIds[i] = m.ID
+		}
+
+		seq := Sequence{
+			ID:          "1",
+			Name:        "Test Sequence",
+			Description: "Description of a sequence",
+			UserId:      userId,
+			Meditations: meditations,
+		}
+		err := store.SaveSequence(seq)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		updatedSequenceInput := UpdateSequenceInput{
+			Name:          seq.Name + " - updated",
+			Description:   seq.Description + " - updated",
+			MeditationIDs: meditationIds[0 : len(meditations)/2],
+			UploadKey:     imageKey,
+		}
+
+		req := buildUpdateSequenceRequest(userId, seq.ID, updatedSequenceInput)
+		resp := UpdateSequenceHandler(req, store)
+		if resp.StatusCode != 200 {
+			t.Errorf("expected status code 200 but got %d", resp.StatusCode)
+			t.Errorf("%+v", resp)
+		}
+	})
+	t.Run("Sequence Update with duplicate meditation in sequence:", func(t *testing.T) {
+		tableName := uuid.NewV4().String()
+		store := initializeTestingStore(tableName)
+		userId := "testUser"
+		meditations := createMeditations(10, userId, store)
+		meditationIds := make([]string, len(meditations))
+		for i, m := range meditations {
+			meditationIds[i] = m.ID
+		}
+
+		seq := Sequence{
+			ID:          "1",
+			Name:        "Test Sequence",
+			Description: "Description of a sequence",
+			UserId:      userId,
+			Meditations: meditations,
+		}
+		err := store.SaveSequence(seq)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		updatedSequenceInput := UpdateSequenceInput{
+			Name:          seq.Name + " - updated",
+			Description:   seq.Description + " - updated",
+			MeditationIDs: meditationIds,
+			// MeditationIDs: append(meditationIds, meditationIds[0]),
+			UploadKey: imageKey,
+		}
+
+		req := buildUpdateSequenceRequest(userId, seq.ID, updatedSequenceInput)
+		resp := UpdateSequenceHandler(req, store)
+		if resp.StatusCode != 200 {
+			t.Errorf("expected status code 200 but got %d", resp.StatusCode)
+			t.Errorf("%+v", resp)
+			return
+		}
+
+		sequence, err := store.GetSequenceById(seq.ID)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+		actualLength := len(sequence.Meditations)
+		expectedLength := len(updatedSequenceInput.MeditationIDs)
+		if actualLength != expectedLength {
+			t.Errorf("expected length: %d, got length: %d", expectedLength, actualLength)
+			return
 		}
 	})
 }

@@ -55,6 +55,14 @@ type CreateSequenceInput struct {
 	MeditationIDs []string `json:"meditationIds"`
 }
 
+type UpdateSequenceInput struct {
+	UploadKey     string   `json:"uploadKey" validate:"uploadKey"`
+	Name          string   `json:"name" validate:"required,excludes=<>"`
+	Description   string   `json:"description" validate:"required"`
+	Public        bool     `json:"isPublic"`
+	MeditationIDs []string `json:"meditationIds"`
+}
+
 func uploadKeyValidator(fl validator.FieldLevel) bool {
 	uploadKey := fl.Field().String()
 

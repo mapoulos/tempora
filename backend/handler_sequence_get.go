@@ -20,9 +20,9 @@ func GetSequenceByIdHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMed
 	}
 
 	// get the sequences
-	sequence, err := store.GetSequenceById(userId)
+	sequence, err := store.GetSequenceById(sequenceId)
 	if err != nil {
-		return internalServerError(err.Error())
+		return notFound("no sequence with id " + sequenceId + " was found")
 	}
 	if sequence.UserId != userId {
 		return notFound("no sequence with id " + sequenceId + " was found")

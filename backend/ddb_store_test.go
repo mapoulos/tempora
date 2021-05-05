@@ -285,9 +285,8 @@ func TestChunker(t *testing.T) {
 	}
 }
 
-func createMeditations(count int, store *DynamoMeditationStore) []Meditation {
+func createMeditations(count int, userId string, store *DynamoMeditationStore) []Meditation {
 	now := time.Now()
-	userId := "alex"
 
 	meditations := make([]Meditation, count)
 	ids := make([]string, count)
@@ -328,7 +327,7 @@ func TestSequences(t *testing.T) {
 		now := time.Now()
 		userId := "alex"
 
-		meditations := createMeditations(10, store)
+		meditations := createMeditations(10, "alex", store)
 		mCount := len(meditations)
 
 		sequenceId := ksuid.New().String()
@@ -351,6 +350,10 @@ func TestSequences(t *testing.T) {
 		fetchedSequence, err := store.GetSequenceById(sequenceId)
 		if err != nil {
 			t.Error(err.Error())
+		}
+		if diff := deep.Equal(sequence, fetchedSequence); diff != nil {
+			t.Error(diff)
+			return
 		}
 		expectedId := sequence.Meditations[0].ID
 		actualId := fetchedSequence.Meditations[0].ID
@@ -400,7 +403,7 @@ func TestSequences(t *testing.T) {
 		now := time.Now()
 		userId := "alex"
 
-		meditations := createMeditations(3, store)
+		meditations := createMeditations(3, "alex", store)
 		sequenceId := ksuid.New().String()
 		sequence := Sequence{
 			ID:          sequenceId,
@@ -442,7 +445,7 @@ func TestSequences(t *testing.T) {
 		store := initializeTestingStore(tableName)
 		now := time.Now()
 
-		meditations := createMeditations(15, store)
+		meditations := createMeditations(15, localUserId, store)
 		numSeqs := 3
 		for i := 0; i < numSeqs; i++ {
 			err := store.SaveSequence(Sequence{
