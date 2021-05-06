@@ -99,6 +99,7 @@ export const fetchPublicMeditationsThunk = (): ThunkAction<
   unknown,
   AnyAction
 > => async (dispatch) => {
+  dispatch(setIsPublicMeditationsLoading(true));
   const meditations = await fetchPublicMeditations();
   dispatch(setPublicMeditations(meditations));
   dispatch(setCurrentMeditation(meditations[0]));
@@ -108,7 +109,8 @@ export const fetchPublicMeditationsThunk = (): ThunkAction<
 
 export const fetchPrivateMeditationsThunk = (
   token: IdToken
-): ThunkAction<Promise<void>, RootState, unknown, AnyAction> => async (dispatch) => {
+): ThunkAction<Promise<void>, RootState, unknown, AnyAction> => async (dispatch, getState) => {
+  // dispatch(setIsPrivateMeditationsLoading(true));
   const meditations = await fetchPrivateMeditations(token);
   dispatch(setPrivateMeditations(meditations));
   dispatch(setIsPrivateMeditationsLoading(false));
