@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useSelector } from "react-redux";
 import { useSwipeable } from "react-swipeable";
 import {
@@ -18,7 +18,7 @@ import { Duration } from "luxon";
 import { Meditation } from "./meditationService";
 import store from "../../app/store";
 import bell from "../../audio/ship_bell_mono.mp3";
-// import Container from "@material-ui/core/Container";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -55,6 +55,13 @@ const useStyles = makeStyles((theme: Theme) =>
       margin: 0,
       marginLeft: "5%",
     },
+    toolbar: theme.mixins.toolbar,
+    spinner: {
+      height: "100vh",
+      flex: 1,
+      alignContent: "center",
+      justifyContent: "center",
+    },
   })
 );
 
@@ -74,15 +81,24 @@ export function MeditationTimer() {
   const [bellDuration, setBellDuration] = useState(0);
   const [meditationDuration, setMeditationDuration] = useState(0);
 
-  const audioSource =
-    currentMeditation === null ? "" : currentMeditation.audioUrl;
+  const audioSource = currentMeditation?.audioUrl
   const meditationAudioRef = useRef(new Audio(audioSource));
   const bellAudioRef = useRef(new Audio(bell));
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [stopPressed, setStopPressed] = useState(false);
 
-  const playBellAndMeditation = () => {
+  const playOrResumeBellAndMeditation = () => {
+    //check for resume
+    if (bellAudioRef.current.currentTime > 0) {
+      bellAudioRef.current.play()
+      return
+    }
+    if (meditationAudioRef.current.currentTime > 0) {
+      meditationAudioRef.current.play()
+      return
+    }
+
     // reset time, clear the event listeners
     bellAudioRef.current.currentTime = 0;
     meditationAudioRef.current.currentTime = 0;
@@ -92,10 +108,18 @@ export function MeditationTimer() {
     // play the chain and cue up the bell -> meditation -> bell sequence
     bellAudioRef.current.play();
     bellAudioRef.current.onended = () => {
+      // reset the bell time
+      bellAudioRef.current.currentTime = 0;
+      // queue up the meditation to play after
       meditationAudioRef.current.onended = () => {
+        // reset the meditation time
+        meditationAudioRef.current.currentTime = 0
+        // queue up the final bell to flip isAudioPlaying
         bellAudioRef.current.onended = () => {
+          bellAudioRef.current.currentTime = 0;
           setIsAudioPlaying(false);
         };
+        // play the bell
         bellAudioRef.current.play();
       };
       meditationAudioRef.current.play();
@@ -103,13 +127,16 @@ export function MeditationTimer() {
   };
 
   // for playing and pausing
-  useEffect(() => {
+  // note we have to use "useLayoutEffect" to get around
+  // safari's auto-play block: (useLayoutEffect is synchronous)
+  // https://lukecod.es/2020/08/27/ios-cant-play-youtube-via-react-useeffect/
+  useLayoutEffect(() => {
     if (isAudioPlaying) {
       // set the durations
       setBellDuration(bellAudioRef.current.duration);
       setMeditationDuration(meditationAudioRef.current.duration);
       // play
-      playBellAndMeditation();
+      playOrResumeBellAndMeditation();
     } else {
       bellAudioRef.current.pause();
       meditationAudioRef.current.pause();
@@ -292,7 +319,12 @@ export function MeditationTimer() {
   const classes = useStyles();
 
   if (currentMeditation === null) {
-    return <div></div>;
+    return (
+    <Grid container spacing={2} className={classes.spinner}>
+      <div className={classes.toolbar} />
+      <CircularProgress color="inherit" />
+    </Grid>
+    );
   }
   return (
     <Grid container spacing={2} {...handlers} className={classes.gridContainer}>
@@ -344,11 +376,12 @@ export function MeditationTimer() {
               <Grid item className={classes.timerRow}>
                 <Button
                   variant="outlined"
+                  disabled={timeRemaining <= 0}
                   className={classes.timerButtons}
                   aria-label="Play/Pause"
                   onClick={toggleIsPlaying}
                 >
-                  {isAudioPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                  {isTimerRunning ? <PauseIcon /> : <PlayArrowIcon />}
                 </Button>
               </Grid>
             </Grid>

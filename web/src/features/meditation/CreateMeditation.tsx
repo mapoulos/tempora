@@ -13,13 +13,12 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@material-ui/core";
-import { string } from "prop-types";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
 import { AppDispatch } from "../../app/store";
 import { selectIdToken } from "../user/userSlice";
-import { CreateMeditationInput, Meditation, uploadMp3 } from "./meditationService";
+import { CreateMeditationInput, uploadMp3 } from "./meditationService";
 import { createMeditationThunk, selectPrivateMeditations, setCurrentMeditation, updateMeditationThunk } from "./meditationSlice";
 
 const useStyles = makeStyles((theme: Theme) =>
