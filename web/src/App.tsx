@@ -12,7 +12,6 @@ import {
 
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { PublicMeditationTable } from "./features/meditation/PublicMeditationTable";
 import { AppBar } from "@material-ui/core";
 import {
   BrowserRouter as Router,
