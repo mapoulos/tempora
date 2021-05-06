@@ -67,8 +67,7 @@ export function MeditationTimer() {
     return accumulator;
   }, {} as Record<string, number>);
 
-  // const sessionLength = useSelector(selectSessionLength);
-  const sessionLength = Duration.fromObject({minutes: 1}).toMillis();
+  const sessionLength = useSelector(selectSessionLength);
   const [timeRemaining, setTimeRemaining] = useState(sessionLength);
 
   const [bellDuration, setBellDuration] = useState(0);
