@@ -18,7 +18,6 @@ import { Duration } from "luxon";
 import { Meditation } from "./meditationService";
 import store from "../../app/store";
 import bell from "../../audio/ship_bell_mono.mp3";
-// import Container from "@material-ui/core/Container";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -68,7 +67,8 @@ export function MeditationTimer() {
     return accumulator;
   }, {} as Record<string, number>);
 
-  const sessionLength = useSelector(selectSessionLength);
+  // const sessionLength = useSelector(selectSessionLength);
+  const sessionLength = Duration.fromObject({minutes: 1}).toMillis();
   const [timeRemaining, setTimeRemaining] = useState(sessionLength);
 
   const [bellDuration, setBellDuration] = useState(0);
@@ -82,7 +82,17 @@ export function MeditationTimer() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [stopPressed, setStopPressed] = useState(false);
 
-  const playBellAndMeditation = () => {
+  const playOrResumeBellAndMeditation = () => {
+    //check for resume
+    if (bellAudioRef.current.currentTime > 0) {
+      bellAudioRef.current.play()
+      return
+    }
+    if (meditationAudioRef.current.currentTime > 0) {
+      meditationAudioRef.current.play()
+      return
+    }
+
     // reset time, clear the event listeners
     bellAudioRef.current.currentTime = 0;
     meditationAudioRef.current.currentTime = 0;
@@ -92,10 +102,18 @@ export function MeditationTimer() {
     // play the chain and cue up the bell -> meditation -> bell sequence
     bellAudioRef.current.play();
     bellAudioRef.current.onended = () => {
+      // reset the bell time
+      bellAudioRef.current.currentTime = 0;
+      // queue up the meditation to play after
       meditationAudioRef.current.onended = () => {
+        // reset the meditation time
+        meditationAudioRef.current.currentTime = 0
+        // queue up the final bell to flip isAudioPlaying
         bellAudioRef.current.onended = () => {
+          bellAudioRef.current.currentTime = 0;
           setIsAudioPlaying(false);
         };
+        // play the bell
         bellAudioRef.current.play();
       };
       meditationAudioRef.current.play();
@@ -109,7 +127,7 @@ export function MeditationTimer() {
       setBellDuration(bellAudioRef.current.duration);
       setMeditationDuration(meditationAudioRef.current.duration);
       // play
-      playBellAndMeditation();
+      playOrResumeBellAndMeditation();
     } else {
       bellAudioRef.current.pause();
       meditationAudioRef.current.pause();
@@ -344,11 +362,12 @@ export function MeditationTimer() {
               <Grid item className={classes.timerRow}>
                 <Button
                   variant="outlined"
+                  disabled={timeRemaining <= 0}
                   className={classes.timerButtons}
                   aria-label="Play/Pause"
                   onClick={toggleIsPlaying}
                 >
-                  {isAudioPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                  {isTimerRunning ? <PauseIcon /> : <PlayArrowIcon />}
                 </Button>
               </Grid>
             </Grid>
