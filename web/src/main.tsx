@@ -6,10 +6,7 @@ import "./index.css";
 import { Provider } from "react-redux";
 import App from "./App";
 import store from "./app/store";
-import { fetchPublicMeditationsThunk } from "./features/meditation/meditationSlice";
 import { Auth0Provider, Auth0ProviderOptions } from "@auth0/auth0-react";
-
-store.dispatch(fetchPublicMeditationsThunk());
 
 const darkTheme = createMuiTheme({
   palette: {

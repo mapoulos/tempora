@@ -38,15 +38,11 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     nameField: {
       flexGrow: 1,
-      // minWidth: 400,
-      // width: "80%",
       justifyContent: "center",
       paddingBottom: theme.spacing(2),
     },
     meditationTextField: {
       flexGrow: 1,
-      // minWidth: 400,
-      // width: "80%",
       paddingBottom: theme.spacing(2),
     },
     toolbar: theme.mixins.toolbar,
@@ -231,12 +227,12 @@ export const CreateOrUpdateMeditation = () => {
                 } label="Make Public?"  labelPlacement="start"/>
               </Grid>
               <Grid container direction="row" justify="flex-end">
-                <Grid item className={classes.fileSelectRow} xs={2}>
+                <Grid item className={classes.fileSelectRow} xs={6} md={3}>
                   <Button
-                    style={{ height: "100%" }}
+                    style={{ height: "100%"}}
                     size="large"
                     component="label"
-                    variant="outlined"
+                    variant="contained"
                     fullWidth
                   >
                     Choose {isUpdate ? (<div>&nbsp;New&nbsp;</div>) : (<div>&nbsp;</div>)} MP3
@@ -248,7 +244,7 @@ export const CreateOrUpdateMeditation = () => {
                     ></input>
                   </Button>
                 </Grid>
-                <Grid item className={classes.fileSelectRow} xs={10}>
+                <Grid item className={classes.fileSelectRow} xs={6} md={9}>
                   <TextField
                     variant="outlined"
                     label={state.audioFile?.name ?? "" }

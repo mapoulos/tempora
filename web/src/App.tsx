@@ -33,8 +33,9 @@ import withWidth from "@material-ui/core/withWidth";
 import { useAuth0 } from "@auth0/auth0-react";
 import { getIdToken } from "./features/user/userSlice";
 import { useDispatch } from "react-redux";
-import { PrivateMeditationTable } from "./features/meditation/PrivateMeditationTable";
-import { CreateOrUpdateMeditation } from "./features/meditation/CreateMeditation";
+import { CreateOrUpdateMeditation } from "./features/meditation/CreateUpdateMeditation";
+import { PrivateMeditationsPage } from "./features/meditation/PrivateMeditationsPage";
+import { PublicMeditationsPage } from "./features/meditation/PublicMeditationsPage";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -203,10 +204,10 @@ function App(props: WithWidth) {
               <CreateOrUpdateMeditation />
             </Route>
             <Route path="/meditations">
-              <PublicMeditationTable />
+              <PublicMeditationsPage />
             </Route>
             <Route path="/private-meditations">
-              <PrivateMeditationTable />
+              <PrivateMeditationsPage />
             </Route>
             <Route path="/create-meditation">
               <CreateOrUpdateMeditation />
