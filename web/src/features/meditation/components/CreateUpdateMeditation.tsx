@@ -20,15 +20,15 @@ import { Cancel, Delete } from "@material-ui/icons";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
-import { AppDispatch } from "../../app/store";
-import { selectIdToken } from "../user/userSlice";
-import { CreateMeditationInput, uploadMp3 } from "./meditationService";
+import { AppDispatch } from "../../../app/store";
+import { selectIdToken } from "../../user/userSlice";
+import { CreateMeditationInput, uploadMp3 } from "../meditationService";
 import {
   createMeditationThunk,
   selectPrivateMeditations,
   setCurrentMeditation,
   updateMeditationThunk,
-} from "./meditationSlice";
+} from "../meditationSlice";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

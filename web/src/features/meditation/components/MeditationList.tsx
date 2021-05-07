@@ -4,7 +4,7 @@ import {
   deleteMeditationThunk,
   fetchPrivateMeditationsThunk,
   setCurrentMeditation,
-} from "./meditationSlice";
+} from "../meditationSlice";
 import {
   Button,
   CircularProgress,
@@ -21,10 +21,10 @@ import {
 import AddIcon from "@material-ui/icons/Add";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { Link as RouterLink, useHistory } from "react-router-dom";
-import { Meditation } from "./meditationService";
-import { selectIdToken } from "../user/userSlice";
+import { Meditation } from "../meditationService";
+import { selectIdToken } from "../../user/userSlice";
 import { IdToken, useAuth0 } from "@auth0/auth0-react";
-import { AppDispatch } from "../../app/store";
+import { AppDispatch } from "../../../app/store";
 import { MeditationCard } from "./MeditationCard";
 
 const useStyles = makeStyles((theme: Theme) =>

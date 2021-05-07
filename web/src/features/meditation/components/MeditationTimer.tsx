@@ -7,7 +7,7 @@ import {
   selectSessionLength,
   setCurrentMeditation,
   updateSessionLength,
-} from "./meditationSlice";
+} from "../meditationSlice";
 import { Button, Card, CardContent, Grid, Typography } from "@material-ui/core";
 import { makeStyles, Theme } from "@material-ui/core/styles";
 import { createStyles } from "@material-ui/core/styles";
@@ -15,9 +15,9 @@ import PlayArrowIcon from "@material-ui/icons/PlayArrow";
 import StopIcon from "@material-ui/icons/Stop";
 import PauseIcon from "@material-ui/icons/Pause";
 import { Duration } from "luxon";
-import { Meditation } from "./meditationService";
-import store from "../../app/store";
-import bell from "../../audio/ship_bell_mono.mp3";
+import { Meditation } from "../meditationService";
+import store from "../../../app/store";
+import bell from "../../../audio/ship_bell_mono.mp3";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
 const useStyles = makeStyles((theme: Theme) =>

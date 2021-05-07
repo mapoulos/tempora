@@ -4,7 +4,7 @@ import {
 	fetchPrivateMeditationsThunk,
   selectIsPrivateMeditationsLoading,
   selectPrivateMeditations,
-} from "./meditationSlice";
+} from "../meditationSlice";
 import {
   Button,
   CircularProgress,
@@ -16,8 +16,8 @@ import AddIcon from "@material-ui/icons/Add";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { IdToken, useAuth0 } from "@auth0/auth0-react";
 import { MeditationList } from "./MeditationList";
-import { AppDispatch } from "../../app/store";
-import { selectIdToken } from "../user/userSlice";
+import { AppDispatch } from "../../../app/store";
+import { selectIdToken } from "../../user/userSlice";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -57,6 +57,7 @@ export function PrivateMeditationsPage() {
     if (!isAuthenticated) {
       return;
     }
+
 
     dispatch(fetchPrivateMeditationsThunk(idToken as IdToken));
   }, [isAuthenticated]);

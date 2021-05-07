@@ -27,14 +27,14 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import About from "./features/about/About";
-import { MeditationTimer } from "./features/meditation/MeditationTimer";
+import { MeditationTimer } from "./features/meditation/components/MeditationTimer";
 import withWidth from "@material-ui/core/withWidth";
 import { useAuth0 } from "@auth0/auth0-react";
 import { getIdToken } from "./features/user/userSlice";
 import { useDispatch } from "react-redux";
-import { CreateOrUpdateMeditation } from "./features/meditation/CreateUpdateMeditation";
-import { PrivateMeditationsPage } from "./features/meditation/PrivateMeditationsPage";
-import { PublicMeditationsPage } from "./features/meditation/PublicMeditationsPage";
+import { CreateOrUpdateMeditation } from "./features/meditation/components/CreateUpdateMeditation";
+import { PrivateMeditationsPage } from "./features/meditation/components/PrivateMeditationsPage";
+import { PublicMeditationsPage } from "./features/meditation/components/PublicMeditationsPage";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

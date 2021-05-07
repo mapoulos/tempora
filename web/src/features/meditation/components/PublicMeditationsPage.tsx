@@ -7,19 +7,17 @@ import {
   selectIsPublicMeditationsLoading,
   selectPrivateMeditations,
   selectPublicMeditations,
-} from "./meditationSlice";
+} from "../meditationSlice";
 import {
-  Button,
   CircularProgress,
   Grid,
   Theme,
-  Typography,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { useAuth0 } from "@auth0/auth0-react";
 import { MeditationList } from "./MeditationList";
-import { AppDispatch } from "../../app/store";
+import { AppDispatch } from "../../../app/store";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
