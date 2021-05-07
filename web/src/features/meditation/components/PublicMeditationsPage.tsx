@@ -1,11 +1,8 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchPrivateMeditationsThunk,
   fetchPublicMeditationsThunk,
-  selectIsPrivateMeditationsLoading,
   selectIsPublicMeditationsLoading,
-  selectPrivateMeditations,
   selectPublicMeditations,
 } from "../meditationSlice";
 import {
@@ -13,9 +10,7 @@ import {
   Grid,
   Theme,
 } from "@material-ui/core";
-import AddIcon from "@material-ui/icons/Add";
 import { createStyles, makeStyles } from "@material-ui/styles";
-import { useAuth0 } from "@auth0/auth0-react";
 import { MeditationList } from "./MeditationList";
 import { AppDispatch } from "../../../app/store";
 

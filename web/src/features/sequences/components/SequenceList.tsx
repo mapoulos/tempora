@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  deleteMeditationThunk,
-  setCurrentMeditation,
-} from "../meditationSlice";
-import {
   Button,
   CircularProgress,
   Grid,
@@ -13,14 +9,22 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  CardHeader,
+  Card,
+  CardContent,
+  Typography,
+  CardMedia,
 } from "@material-ui/core";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { useHistory } from "react-router-dom";
-import { Meditation } from "../meditationService";
+
 import { selectIdToken } from "../../user/userSlice";
 import { IdToken } from "@auth0/auth0-react";
 import { AppDispatch } from "../../../app/store";
-import { MeditationCard } from "./MeditationCard";
+import { Meditation } from "../../meditation/meditationService";
+import { Sequence } from "../sequenceService";
+import { setCurrentSequence } from "../sequenceSlice";
+// import { MeditationCard } from "./MeditationCard";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -59,15 +63,15 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export interface MeditationListProps {
-  meditations: Meditation[];
+export interface SequenceListProps {
+  sequences: Sequence[];
   isLoading: boolean;
 }
 
 export function MeditationList({
-  meditations,
+  sequences,
   isLoading,
-}: MeditationListProps) {
+}: SequenceListProps) {
   const idToken = useSelector(selectIdToken);
 
   const dispatch = useDispatch<AppDispatch>();
@@ -78,18 +82,18 @@ export function MeditationList({
     {} as Meditation
   );
 
-  const chooseMeditation = (meditation: Meditation) => {
-    dispatch(setCurrentMeditation(meditation));
+  const chooseSequence = (sequence: Sequence) => {
+    dispatch(setCurrentSequence(sequence));
   };
 
-  const handleDeleteDialogClose = (shouldDelete: boolean) => {
-    if (shouldDelete) {
-      dispatch(
-        deleteMeditationThunk(selectedMeditation._id, idToken as IdToken)
-      );
-    }
-    setIsDeleteDialogOpen(false);
-  };
+//   const handleDeleteDialogClose = (shouldDelete: boolean) => {
+//     if (shouldDelete) {
+//       dispatch(
+//         deleteMeditationThunk(selectedMeditation._id, idToken as IdToken)
+//       );
+//     }
+//     setIsDeleteDialogOpen(false);
+//   };
 
   const classes = useStyles();
 
@@ -104,33 +108,24 @@ export function MeditationList({
   }
 
 
-  const meditationCards = meditations.map((m) => (
-    <Grid item xs={12} key={m._id}>
-      <MeditationCard
-        meditation={m}
-        canEdit={m._userId === idToken?.sub}
-        key={m._id}
-        onSelect={() => {
-          chooseMeditation(m);
-          history.push("/");
-        }}
-        onEdit={() => {
-          history.push(`/meditations/${m._id}/update`);
-        }}
-        onDelete={() => {
-          setSelectedMeditation(m);
-          setIsDeleteDialogOpen(true);
-        }}
-      />
+  const sequenceCards = sequences.map((s) => (
+    <Grid item xs={12} key={s._id}>
+      <Card>
+		  <CardHeader title={s.name}/>
+		  <CardContent>
+			  <Typography>{s.description}</Typography>
+		  </CardContent>
+		  <CardMedia image={s.imageUrl} />
+	  </Card>
     </Grid>
   ));
 
   return (
     <React.Fragment>
       <Grid container className={classes.selectorGrid} spacing={1}>
-        {meditationCards}
+        {sequenceCards}
       </Grid>
-      <Dialog open={isDeleteDialogOpen} onClose={handleDeleteDialogClose}>
+      {/* <Dialog open={isDeleteDialogOpen} onClose={handleDeleteDialogClose}>
         <DialogContent>
           <DialogContentText>
             Are you sure you want to delete this meditation? This action
@@ -153,7 +148,7 @@ export function MeditationList({
             Yes
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
     </React.Fragment>
   );
 }
