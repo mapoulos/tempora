@@ -65,6 +65,26 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
+// a typescript'ed version of Dan Abramov's elegant `useInterval`:
+// https://overreacted.io/making-setinterval-declarative-with-react-hooks/#just-show-me-the-code
+const useInterval = (callback: () => void, delay: null|number) => {
+  const savedCallback = useRef(() => {})
+
+  useEffect(() => {
+    savedCallback.current = callback
+  },[callback])
+
+  useEffect(() => {
+    const tick = () => {
+      savedCallback.current()
+    }
+    if (delay !== null) {
+      const id = setInterval(tick, delay)
+      return () =>  clearInterval(id)
+    }
+  }, [delay])
+}
+
 export function MeditationTimer() {
   const currentMeditation: null | Meditation = useSelector(
     selectCurrentMeditation
@@ -77,6 +97,8 @@ export function MeditationTimer() {
 
   const sessionLength = useSelector(selectSessionLength);
   const [timeRemaining, setTimeRemaining] = useState(sessionLength);
+  // const [timerState, setTimerState] = useState({timeRemaining: sessionLength})
+
 
   const [bellDuration, setBellDuration] = useState(0);
   const [meditationDuration, setMeditationDuration] = useState(0);
@@ -156,18 +178,16 @@ export function MeditationTimer() {
 
   // for handling when a new meditation is selected
   useEffect(() => {
+    bellAudioRef.current.pause();
     meditationAudioRef.current.pause();
     meditationAudioRef.current = new Audio(audioSource);
+    bellAudioRef.current.currentTime = 0;
+    meditationAudioRef.current.currentTime = 0;
   }, [audioSource]);
 
   // for counting down
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!isTimerRunning) {
-        return;
-      }
-
-      const newTime = Duration.fromMillis(timeRemaining)
+  useInterval(() => {
+    const newTime = Duration.fromMillis(timeRemaining)
         .minus(Duration.fromMillis(1000))
         .toMillis();
 
@@ -185,16 +205,9 @@ export function MeditationTimer() {
         setIsTimerRunning(false);
         setStopPressed(true);
       }
+      setTimeRemaining(newTime)
+  }, isTimerRunning ? 1000 : null)
 
-      setTimeRemaining(newTime);
-    }, 1000);
-
-    return () => {
-      // for cleanup, and also ensuring that
-      // the reset of the time "sticks"
-      clearTimeout(timeout);
-    };
-  });
 
   const updateSessionLengthAndTimeRemaining = (duration: number) => {
     if (
@@ -204,7 +217,8 @@ export function MeditationTimer() {
       return;
     }
     store.dispatch(updateSessionLength(duration));
-    setTimeRemaining(duration);
+    setTimeRemaining(duration)
+    // setTimerState({timeRemaining: duration})
   };
 
   const addFiveMinutesToSession = () => {
@@ -301,13 +315,23 @@ export function MeditationTimer() {
 
   const toggleIsPlaying = () => {
     setStopPressed(false);
+
     if (isAudioPlaying) {
+      setIsTimerRunning(false)
       setIsAudioPlaying(false);
-      setIsTimerRunning(false);
-    } else {
-      setIsAudioPlaying(true);
-      setIsTimerRunning(true);
+      return
     }
+    // to actually enable the audio, one of two things need to be the case;
+    // we need to either be at a beginning state ()
+    const shouldBegin = sessionLength === timeRemaining
+    const shouldResume = bellAudioRef.current.currentTime > 0 || meditationAudioRef.current.currentTime > 0
+    if (shouldResume || shouldBegin) {
+      setIsAudioPlaying(true)
+      setIsTimerRunning(true)
+      return
+    }
+
+    setIsTimerRunning(!isTimerRunning)
   };
 
   const onStop = () => {
@@ -360,7 +384,7 @@ export function MeditationTimer() {
                   aria-label="stop"
                   className={classes.timerButtons}
                   onClick={() => {
-                    setTimeRemaining(sessionLength);
+                    setTimeRemaining(sessionLength)
                     onStop();
                   }}
                 >
