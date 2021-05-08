@@ -14,6 +14,8 @@ import {
   CardContent,
   Typography,
   CardMedia,
+  CardActions,
+  Tooltip,
 } from "@material-ui/core";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { useHistory } from "react-router-dom";
@@ -60,6 +62,15 @@ const useStyles = makeStyles((theme: Theme) =>
       flexGrow: 1,
     },
     toolbar: theme.mixins.toolbar,
+    // card stuff
+    cardRoot: {
+      maxWidth: 360,
+    },
+    cardMedia: {
+      height: 0,
+      paddingTop: '56.25%'
+      // paddingTop: '50%'
+    },
   })
 );
 
@@ -68,7 +79,7 @@ export interface SequenceListProps {
   isLoading: boolean;
 }
 
-export function MeditationList({
+export function SequenceList({
   sequences,
   isLoading,
 }: SequenceListProps) {
@@ -108,14 +119,18 @@ export function MeditationList({
   }
 
 
-  const sequenceCards = sequences.map((s) => (
-    <Grid item xs={12} key={s._id}>
-      <Card>
-		  <CardHeader title={s.name}/>
-		  <CardContent>
-			  <Typography>{s.description}</Typography>
-		  </CardContent>
-		  <CardMedia image={s.imageUrl} />
+  const sequenceCards = [...sequences, ...sequences].map((s) => (
+    <Grid item xs={6} md={6} key={s._id}>
+      <Card className={classes.cardRoot}>
+		  <CardMedia image={s.imageUrl} className={classes.cardMedia} />
+
+      <CardActions>
+        <Grid container justify="space-between">
+        <Tooltip title={<Typography>{s.description}</Typography>}>
+        <Button style={{flexGrow: 1}}>{s.name}</Button>
+        </Tooltip>
+        </Grid>
+      </CardActions>
 	  </Card>
     </Grid>
   ));

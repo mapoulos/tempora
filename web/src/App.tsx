@@ -8,6 +8,7 @@ import {
   WithWidth,
   isWidthUp,
   CssBaseline,
+  useMediaQuery,
 } from "@material-ui/core";
 
 import React, { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ import {
   Route,
   Link as RouterLink,
 } from "react-router-dom";
-import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
+import { createStyles, makeStyles, Theme, useTheme } from "@material-ui/core/styles";
 import MenuIcon from "@material-ui/icons/Menu";
 import AccountCircle from "@material-ui/icons/AccountCircle";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -35,6 +36,7 @@ import { useDispatch } from "react-redux";
 import { CreateOrUpdateMeditation } from "./features/meditation/components/CreateUpdateMeditation";
 import { PrivateMeditationsPage } from "./features/meditation/components/PrivateMeditationsPage";
 import { PublicMeditationsPage } from "./features/meditation/components/PublicMeditationsPage";
+import { PublicSequencePage } from "./features/sequences/components/PublicSequencePage";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -78,7 +80,9 @@ const useStyles = makeStyles((theme: Theme) =>
 
 function App(props: WithWidth) {
   const classes = useStyles();
-  const { width } = props;
+  // const { width } = props;
+  const theme = useTheme()
+  const mdOrHigher = useMediaQuery(theme.breakpoints.up('md'))
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const dispatch = useDispatch();
   const {
@@ -94,7 +98,7 @@ function App(props: WithWidth) {
 
   // on medium and higher, have the drawer always open.
   // on 'sm' and 'xs' use the hamburger icon
-  const drawerVariant = isWidthUp("md", width) ? "permanent" : "temporary";
+  const drawerVariant = mdOrHigher ? "permanent" : "temporary";
   const toggleDrawer = () => {
     isDrawerOpen ? setDrawerOpen(false) : setDrawerOpen(true);
   };
@@ -172,6 +176,17 @@ function App(props: WithWidth) {
                 <ListItemText>
                   <Button
                     component={RouterLink}
+                    to="/sequences"
+                    onClick={() => toggleDrawer()}
+                  >
+                    Public Sequences
+                  </Button>
+                </ListItemText>
+              </ListItem>
+              <ListItem>
+                <ListItemText>
+                  <Button
+                    component={RouterLink}
                     to="/private-meditations"
                     onClick={() => toggleDrawer()}
                   >
@@ -207,6 +222,9 @@ function App(props: WithWidth) {
             </Route>
             <Route path="/private-meditations">
               <PrivateMeditationsPage />
+            </Route>
+            <Route path="/sequences">
+              <PublicSequencePage />
             </Route>
             <Route path="/create-meditation">
               <CreateOrUpdateMeditation />

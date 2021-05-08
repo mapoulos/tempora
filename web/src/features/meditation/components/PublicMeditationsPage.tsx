@@ -16,24 +16,11 @@ import { AppDispatch } from "../../../app/store";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    cardActions: {
-      flex: 1,
-      width: "100%",
-      justifyContent: "flex-end",
-      flexDirection: "row",
-    },
-    selectorGrid: {
-      alignContent: "center",
-      justifyContent: "center",
-    },
     spinner: {
       height: "100vh",
       flex: 1,
       alignContent: "center",
       justifyContent: "center",
-    },
-    buttonRow: {
-      marginBottom: 10,
     },
     toolbar: theme.mixins.toolbar,
   })
