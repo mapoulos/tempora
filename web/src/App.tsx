@@ -36,6 +36,7 @@ import { useDispatch } from "react-redux";
 import { CreateOrUpdateMeditation } from "./features/meditation/components/CreateUpdateMeditation";
 import { PrivateMeditationsPage } from "./features/meditation/components/PrivateMeditationsPage";
 import { PublicMeditationsPage } from "./features/meditation/components/PublicMeditationsPage";
+import { PublicSequenceListPage } from "./features/sequences/components/PublicSequenceListPage";
 import { PublicSequencePage } from "./features/sequences/components/PublicSequencePage";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -129,6 +130,7 @@ function App(props: WithWidth) {
                 aria-haspopup="true"
               >
                 <AccountCircle />
+
               </IconButton>
             ) : (
               <Button color="inherit" onClick={() => loginWithRedirect()}>
@@ -176,7 +178,7 @@ function App(props: WithWidth) {
                 <ListItemText>
                   <Button
                     component={RouterLink}
-                    to="/sequences"
+                    to="/public/sequences"
                     onClick={() => toggleDrawer()}
                   >
                     Public Sequences
@@ -223,9 +225,13 @@ function App(props: WithWidth) {
             <Route path="/private-meditations">
               <PrivateMeditationsPage />
             </Route>
-            <Route path="/sequences">
+            <Route path="/public/sequences/:sequenceId">
               <PublicSequencePage />
             </Route>
+            <Route path="/public/sequences">
+              <PublicSequenceListPage />
+            </Route>
+
             <Route path="/create-meditation">
               <CreateOrUpdateMeditation />
             </Route>

@@ -68,8 +68,8 @@ export const fetchPrivateSequences = async (
     },
   })
     .then((resp) => resp.json())
-    .then((Sequences: Array<SequenceDTO>) => {
-      return Sequences.map((m) => mapDTOToSequence(m));
+    .then((sequences: Array<SequenceDTO>) => {
+      return sequences.map((m) => mapDTOToSequence(m));
     });
 };
 
@@ -149,3 +149,14 @@ export const deleteSequenceById = async (
     },
   });
 };
+
+export const fetchPublicSequenceById = async (sequenceId: string): Promise<Sequence> => {
+  const resp = await fetch(`${base}/public/sequences/${sequenceId}`)
+  const sequenceDTO: SequenceDTO = await resp.json()
+  const sequence = mapDTOToSequence(sequenceDTO)
+
+  return {
+    ...sequence,
+    meditations: sequence?.meditations ?? []
+  }
+}

@@ -26,6 +26,7 @@ import { AppDispatch } from "../../../app/store";
 import { Meditation } from "../../meditation/meditationService";
 import { Sequence } from "../sequenceService";
 import { setCurrentSequence } from "../sequenceSlice";
+import {Link as RouterLink} from "react-router-dom";
 // import { MeditationCard } from "./MeditationCard";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -119,7 +120,7 @@ export function SequenceList({
   }
 
 
-  const sequenceCards = [...sequences, ...sequences].map((s) => (
+  const sequenceCards = sequences.map((s) => (
     <Grid item xs={6} md={6} key={s._id}>
       <Card className={classes.cardRoot}>
 		  <CardMedia image={s.imageUrl} className={classes.cardMedia} />
@@ -127,7 +128,7 @@ export function SequenceList({
       <CardActions>
         <Grid container justify="space-between">
         <Tooltip title={<Typography>{s.description}</Typography>}>
-        <Button style={{flexGrow: 1}}>{s.name}</Button>
+        <Button component={RouterLink} to={`/public/sequences/${s._id}`} style={{flexGrow: 1}}>{s.name}</Button>
         </Tooltip>
         </Grid>
       </CardActions>
