@@ -1,3 +1,4 @@
+import { IdToken } from "@auth0/auth0-spa-js";
 import {
   Grid,
   CircularProgress,
@@ -12,12 +13,13 @@ import {
   ButtonBase,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router-dom";
 import { AppDispatch } from "../../../app/store";
 import { Meditation } from "../../meditation/meditationService";
 import { setCurrentMeditation } from "../../meditation/meditationSlice";
-import { fetchPublicSequenceById, Sequence } from "../sequenceService";
+import { selectIdToken } from "../../user/userSlice";
+import { fetchPrivateSequenceById, fetchPublicSequenceById, Sequence } from "../sequenceService";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -39,18 +41,31 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export const PublicSequencePage = () => {
+interface SequencePageProps  {
+	isPublic: boolean
+}
+
+export const SequencePage = ({isPublic}: SequencePageProps) => {
   const [sequence, setSequence] = useState<null | Sequence>(null);
   const [isSequenceLoading, setIsSequenceLoading] = useState(true);
   const { sequenceId } = useParams<{ sequenceId: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const history = useHistory()
+  const idToken = useSelector(selectIdToken)
 
   useEffect(() => {
-    fetchPublicSequenceById(sequenceId).then((s) => {
-      setSequence(s);
-      setIsSequenceLoading(false);
-    });
+	if(isPublic) {
+		fetchPublicSequenceById(sequenceId).then((s) => {
+			setSequence(s);
+			setIsSequenceLoading(false);
+		  });
+	} else {
+		fetchPrivateSequenceById(sequenceId, idToken as IdToken).then((s) => {
+			setSequence(s);
+			setIsSequenceLoading(false);
+		  });
+	}
+
   }, []);
   const classes = useStyles();
   const onMeditationSelect = (m: Meditation) => {

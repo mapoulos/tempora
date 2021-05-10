@@ -128,7 +128,7 @@ export function SequenceList({
       <CardActions>
         <Grid container justify="space-between">
         <Tooltip title={<Typography>{s.description}</Typography>}>
-        <Button component={RouterLink} to={`/sequences/${s._id}`} style={{flexGrow: 1}}>{s.name}</Button>
+        <Button component={RouterLink} to={`${s.isPublic ? "" : "/private" }/sequences/${s._id}`} style={{flexGrow: 1}}>{s.name}</Button>
         </Tooltip>
         </Grid>
       </CardActions>

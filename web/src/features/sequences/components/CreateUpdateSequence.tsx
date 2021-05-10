@@ -21,13 +21,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
 import { AppDispatch } from "../../../app/store";
 import { selectIdToken } from "../../user/userSlice";
-import { CreateMeditationInput, uploadMp3 } from "../meditationService";
+import { CreateSequenceInput, uploadImage } from "../sequenceService";
 import {
-  createMeditationThunk,
-  selectPrivateMeditations,
-  setCurrentMeditation,
-  updateMeditationThunk,
-} from "../meditationSlice";
+	createSequenceThunk,
+	selectPrivateSequences,
+	updateSequenceThunk
+} from "../sequenceSlice"
+
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: "center",
       paddingBottom: theme.spacing(2),
     },
-    meditationTextField: {
+    sequenceDescriptionField: {
       flexGrow: 1,
       paddingBottom: theme.spacing(2),
     },
@@ -72,43 +72,43 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export interface CreateOrUpdateMeditationProps {
-  meditationId?: string;
+export interface CreateOrUpdateSequenceProps {
+  sequenceId?: string;
 }
 
-export const CreateOrUpdateMeditation = () => {
+export const CreateOrUpdateSequence = () => {
   const dispatch = useDispatch<AppDispatch>();
   const idToken = useSelector(selectIdToken);
-  const privateMeditations = useSelector(selectPrivateMeditations);
+  const privateSequences = useSelector(selectPrivateSequences);
   const history = useHistory();
   const [state, setState] = useState({
     audioFile: {} as File,
-    meditation: {
+    sequence: {
       name: "",
-      text: "",
+      description: "",
       isPublic: false,
       uploadKey: "",
     },
   });
 
-  const { meditationId } = useParams<CreateOrUpdateMeditationProps>();
+  const { sequenceId } = useParams<CreateOrUpdateSequenceProps>();
 
-  const meditation =
-    meditationId !== undefined
-      ? privateMeditations.find((m) => m._id === meditationId)
+  const sequence =
+    sequenceId !== undefined
+      ? privateSequences.find((m) => m._id === sequenceId)
       : undefined;
 
-  const isUpdate = meditation !== undefined;
+  const isUpdate = sequence !== undefined;
 
   useEffect(() => {
     if (isUpdate) {
       setState({
         ...state,
-        meditation: {
-          ...state.meditation,
-          name: meditation?.name ?? "",
-          text: meditation?.text ?? "",
-          isPublic: meditation?.isPublic ?? false,
+        sequence: {
+          ...state.sequence,
+          name: sequence?.name ?? "",
+          description: sequence?.description ?? "",
+          isPublic: sequence?.isPublic ?? false,
         },
       });
     }
@@ -120,26 +120,26 @@ export const CreateOrUpdateMeditation = () => {
   };
 
   const isSubmitEnabled =
-    isTextFieldValid(state.meditation.name) &&
-    isTextFieldValid(state.meditation.text) &&
-    (isTextFieldValid(state.meditation.uploadKey) || isUpdate);
+    isTextFieldValid(state.sequence.name) &&
+    isTextFieldValid(state.sequence.description) &&
+    (isTextFieldValid(state.sequence.uploadKey) || isUpdate);
   const classes = useStyles();
 
-  const handleNameFieldChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setState({
       ...state,
-      meditation: {
-        ...state.meditation,
+      sequence: {
+        ...state.sequence,
         name: evt.target.value || "",
       },
     });
   };
-  const handleTextFieldChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDescriptionChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setState({
       ...state,
-      meditation: {
-        ...state.meditation,
-        text: evt.target.value || "",
+      sequence: {
+        ...state.sequence,
+        description: evt.target.value || "",
       },
     });
   };
@@ -151,12 +151,12 @@ export const CreateOrUpdateMeditation = () => {
     const file = files[0];
 
     if (idToken) {
-      const key = await uploadMp3(file, idToken);
+      const key = await uploadImage(file, idToken);
       setState({
         ...state,
         audioFile: file,
-        meditation: {
-          ...state.meditation,
+        sequence: {
+          ...state.sequence,
           uploadKey: key,
         },
       });
@@ -168,40 +168,39 @@ export const CreateOrUpdateMeditation = () => {
   ) => {
     setState({
       ...state,
-      meditation: {
-        ...state.meditation,
+      sequence: {
+        ...state.sequence,
         isPublic: evt.target.checked,
       },
     });
   };
 
   const handleSubmit = async () => {
-    const createOrUpdateMeditationArgs: CreateMeditationInput =
-      state.meditation;
+    const createOrUpdateSequenceArgs: CreateSequenceInput =
+      state.sequence;
     try {
       if (isUpdate) {
         await dispatch(
-          updateMeditationThunk(
+          updateSequenceThunk(
             {
-              ...createOrUpdateMeditationArgs,
-              _id: meditationId || "MEDITATION_ID_NOT_FOUND",
+              ...createOrUpdateSequenceArgs,
+              _id: sequenceId || "SEQUENCE_ID_NOT_FOUND",
             },
             idToken as IdToken
           )
         );
-        history.push("/private/meditations");
+        history.push(`/private/sequences/${sequenceId}`);
       } else {
-        const newMeditation = await dispatch(
-          createMeditationThunk(
-            createOrUpdateMeditationArgs,
+        const newSequence = await dispatch(
+          createSequenceThunk(
+            createOrUpdateSequenceArgs,
             idToken as IdToken
           )
         );
-        dispatch(setCurrentMeditation(newMeditation));
-        history.push("/");
+        history.push(`/private/sequences/${newSequence._id}`);
       }
     } catch (error) {
-      console.error("There was a problem creating or updating the meditation");
+      console.error("There was a problem creating or updating the sequence");
       console.error(error);
     }
   };
@@ -209,8 +208,8 @@ export const CreateOrUpdateMeditation = () => {
   const resetChooseMedia = () => {
     setState({
       audioFile: {} as File,
-      meditation: {
-        ...state.meditation,
+      sequence: {
+        ...state.sequence,
         uploadKey: ""
       }
     })
@@ -221,7 +220,7 @@ export const CreateOrUpdateMeditation = () => {
       <div className={classes.toolbar} />
       <Card>
         <CardHeader
-          title={isUpdate ? "Update Meditation" : "Create Meditation"}
+          title={isUpdate ? "Update Sequence" : "Create Sequence"}
         />
         <CardContent>
           <form className={classes.formRoot} autoComplete="off">
@@ -230,33 +229,33 @@ export const CreateOrUpdateMeditation = () => {
                 <TextField
                   required
                   fullWidth
-                  id="meditationNameField"
+                  id="sequenceNameField"
                   color="secondary"
                   variant="outlined"
-                  label="Meditation Name"
+                  label="Sequence Name"
                   className={classes.nameField}
-                  onChange={handleNameFieldChange}
-                  value={state.meditation.name}
+                  onChange={handleNameChange}
+                  value={state.sequence.name}
                 ></TextField>
               </Grid>
               <Grid item className={classes.gridItem} xs={12}>
                 <TextField
                   required
                   fullWidth
-                  id="meditationTextField"
+                  id="sequenceDescriptionField"
                   variant="outlined"
                   color="secondary"
-                  label="Meditation Text"
-                  onChange={handleTextFieldChange}
-                  className={classes.meditationTextField}
+                  label="Description"
+                  onChange={handleDescriptionChange}
+                  className={classes.sequenceDescriptionField}
                   multiline
                   rows={15}
-                  value={state.meditation.text}
+                  value={state.sequence.description}
                 ></TextField>
               </Grid>
               <Grid container direction="row" justify="flex-start">
                 <Grid item className={classes.fileSelectRow} xs={12}>
-                  {state.meditation.uploadKey === "" ? (
+                  {state.sequence.uploadKey === "" ? (
                     <Grid container>
                       <Grid item>
                     <Button
@@ -272,11 +271,11 @@ export const CreateOrUpdateMeditation = () => {
                       ) : (
                         <div>&nbsp;</div>
                       )}{" "}
-                      MP3
+                      Image
                       <input
                         type="file"
                         hidden
-                        accept=".mp3"
+                        accept=".png,.jpg"
                         onChange={handleFileSelection}
                       ></input>
                     </Button>
@@ -299,11 +298,11 @@ export const CreateOrUpdateMeditation = () => {
                 </Grid>
               </Grid>
               <Grid item className={classes.gridItem} xs={12}>
-                <Tooltip title={<Typography>Published meditations are discoverable by all users of Tempora.</Typography>}>
+                <Tooltip title={<Typography>Published series are discoverable by all users of Tempora.</Typography>}>
                 <FormControlLabel
                   control={
                     <Checkbox
-                      checked={state.meditation.isPublic}
+                      checked={state.sequence.isPublic}
                       size="medium"
                       onChange={handleIsPublicSelection}
                     />

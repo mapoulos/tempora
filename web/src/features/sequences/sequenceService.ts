@@ -160,3 +160,18 @@ export const fetchPublicSequenceById = async (sequenceId: string): Promise<Seque
     meditations: sequence?.meditations ?? []
   }
 }
+
+export const fetchPrivateSequenceById = async (sequenceId: string, idToken: IdToken): Promise<Sequence> => {
+  const resp = await fetch(`${base}/sequences/${sequenceId}`, {
+    headers: {
+      Authorization: idToken.__raw
+    }
+  })
+  const sequenceDTO: SequenceDTO = await resp.json()
+  const sequence = mapDTOToSequence(sequenceDTO)
+
+  return {
+    ...sequence,
+    meditations: sequence?.meditations ?? []
+  }
+}
