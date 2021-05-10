@@ -18,6 +18,7 @@ import { IdToken, useAuth0 } from "@auth0/auth0-react";
 import { MeditationList } from "./MeditationList";
 import { AppDispatch } from "../../../app/store";
 import { selectIdToken } from "../../user/userSlice";
+import { Link as RouterLink } from "react-router-dom";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

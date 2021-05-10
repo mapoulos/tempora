@@ -108,7 +108,7 @@ export const MeditationCard = ({
         </CardActions>
       </Card>
       <Menu
-        id={`edit-menu`}
+        id={`edit-menu-${meditation._id}`}
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         keepMounted

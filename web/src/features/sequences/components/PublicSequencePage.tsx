@@ -9,16 +9,12 @@ import {
   makeStyles,
   Theme,
   Button,
-  List,
-  ListItem,
-  CardMedia,
   ButtonBase,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useHistory, useParams } from "react-router";
+import { useHistory, useParams } from "react-router-dom";
 import { AppDispatch } from "../../../app/store";
-import { MeditationList } from "../../meditation/components/MeditationList";
 import { Meditation } from "../../meditation/meditationService";
 import { setCurrentMeditation } from "../../meditation/meditationSlice";
 import { fetchPublicSequenceById, Sequence } from "../sequenceService";
