@@ -190,7 +190,7 @@ export const CreateOrUpdateMeditation = () => {
             idToken as IdToken
           )
         );
-        history.push("/private-meditations");
+        history.push("/private/meditations");
       } else {
         const newMeditation = await dispatch(
           createMeditationThunk(

@@ -168,13 +168,13 @@ function App(props: WithWidth) {
           style={{ textAlign: "left" }}
         >
           <MenuItem
-            component={RouterLink} to="/private/meditations"
+            component={RouterLink} to="/private/meditations" onClick={() => handleClose()}
           >
             My Meditations
           </MenuItem>
           <MenuItem
             divider
-            component={RouterLink} to="/private/sequences"
+            component={RouterLink} to="/private/sequences" onClick={() => handleClose()}
           >
             My Series
           </MenuItem>
@@ -257,22 +257,22 @@ function App(props: WithWidth) {
             <Route path="/meditations">
               <PublicMeditationsPage />
             </Route>
-            <Route path="/sequences">
-              <PublicSequenceListPage />
-            </Route>
             <Route path="/sequences/:sequenceId">
               <PublicSequencePage />
             </Route>
+            <Route path="/sequences">
+              <PublicSequenceListPage />
+            </Route>
 
             {/* Private "pages" */}
-            <Route path="/private/meditations">
-              <PrivateMeditationsPage />
-            </Route>
             <Route path="/private/meditations/:meditationId/update">
               <CreateOrUpdateMeditation />
             </Route>
             <Route path="/private/meditations/create">
               <CreateOrUpdateMeditation />
+            </Route>
+            <Route path="/private/meditations">
+              <PrivateMeditationsPage />
             </Route>
 
             {/* the medtitation timer*/}

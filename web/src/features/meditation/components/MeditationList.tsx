@@ -115,7 +115,7 @@ export function MeditationList({
           history.push("/");
         }}
         onEdit={() => {
-          history.push(`/meditations/${m._id}/update`);
+          history.push(`/private/meditations/${m._id}/update`);
         }}
         onDelete={() => {
           setSelectedMeditation(m);
