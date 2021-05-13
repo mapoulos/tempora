@@ -16,10 +16,9 @@ import {
   Tooltip,
   ListItem,
   List,
-  ButtonBase,
   Divider,
 } from "@material-ui/core";
-import { Cancel, Save } from "@material-ui/icons";
+import { Cancel } from "@material-ui/icons";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
@@ -32,11 +31,9 @@ import { selectIdToken } from "../../user/userSlice";
 import { CreateSequenceInput, uploadImage } from "../sequenceService";
 import {
   createSequenceThunk,
-  selectMeditationSelectorMeditations,
   selectPrivateSequences,
   updateSequenceThunk,
 } from "../sequenceSlice";
-import { Link as RouterLink } from "react-router-dom";
 import { SelectableMeditationCard } from "../../meditation/components/SelectableMeditationCard";
 import { Meditation } from "../../meditation/meditationService";
 
@@ -105,12 +102,9 @@ export const CreateOrUpdateSequence = () => {
       description: "",
       isPublic: false,
       uploadKey: "",
-      meditationIds: [] as string[]
+      meditationIds: [] as string[],
     },
   });
-
-
-
 
   const { sequenceId } = useParams<CreateOrUpdateSequenceProps>();
 
@@ -146,8 +140,6 @@ export const CreateOrUpdateSequence = () => {
           isPublic: sequence?.isPublic ?? false,
         },
       });
-    } else {
-      // dispatch(setSelectedMeditations([]))
     }
   }, [idToken]);
 
@@ -253,6 +245,11 @@ export const CreateOrUpdateSequence = () => {
     });
   };
 
+  /////////
+  // Not exactly ideal to shove this into this component, but having the meditation selector
+  // as part of the form vastly simplifies the state management because then we can avoid
+  // putting it in redux. A modal would also work, but a separate page (from the user's
+  // point of view) is better.
   if (showMedidtationSelector) {
     return (
       <React.Fragment>
@@ -264,17 +261,18 @@ export const CreateOrUpdateSequence = () => {
                 variant="contained"
                 color="primary"
                 size="large"
-                style={{margin: 10}}
-
+                style={{ margin: 10 }}
                 onClick={() => {
                   setState({
                     ...state,
                     sequence: {
                       ...state.sequence,
-                      meditationIds: Object.values(selectedMeditations).map(m => m._id)
-                    }
-                  })
-                  setShowMeditationSelector(false)
+                      meditationIds: Object.values(selectedMeditations).map(
+                        (m) => m._id
+                      ),
+                    },
+                  });
+                  setShowMeditationSelector(false);
                 }}
               >
                 Save
@@ -282,9 +280,9 @@ export const CreateOrUpdateSequence = () => {
               <Button
                 variant="outlined"
                 size="large"
-                style={{margin: 10}}
+                style={{ margin: 10 }}
                 onClick={() => {
-                  setShowMeditationSelector(false)
+                  setShowMeditationSelector(false);
                 }}
               >
                 Cancel

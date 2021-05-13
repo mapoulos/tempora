@@ -1,16 +1,19 @@
-// TODO:
-
-import { makeStyles, Theme, createStyles, CircularProgress, Grid } from "@material-ui/core";
-import React, { useEffect } from "react"
+import {
+  makeStyles,
+  Theme,
+  createStyles,
+  CircularProgress,
+  Grid,
+} from "@material-ui/core";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "../../../app/store";
-import { fetchPublicSequencesThunk, selectIsPublicSequencesLoading, selectPublicSequences } from "../sequenceSlice";
+import {
+  fetchPublicSequencesThunk,
+  selectIsPublicSequencesLoading,
+  selectPublicSequences,
+} from "../sequenceSlice";
 import { SequenceList } from "./SequenceList";
-
-// - get a sequence page wired in.
-// - show the public sequences
-// - show the private sequences
-// - a create form
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -25,27 +28,27 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 export const PublicSequenceListPage = () => {
-	const publicSequences = useSelector(selectPublicSequences)
-	const isSequencesLoading = useSelector(selectIsPublicSequencesLoading)
-	const dispatch = useDispatch<AppDispatch>()
-	const classes = useStyles()
+  const publicSequences = useSelector(selectPublicSequences);
+  const isSequencesLoading = useSelector(selectIsPublicSequencesLoading);
+  const dispatch = useDispatch<AppDispatch>();
+  const classes = useStyles();
 
-	useEffect(() => {
-		dispatch(fetchPublicSequencesThunk())
-	},[])
+  useEffect(() => {
+    dispatch(fetchPublicSequencesThunk());
+  }, []);
 
-	if (isSequencesLoading) {
-		return (
-		  <Grid container spacing={2} className={classes.spinner}>
-			<div className={classes.toolbar} />
+  if (isSequencesLoading) {
+    return (
+      <Grid container spacing={2} className={classes.spinner}>
+        <div className={classes.toolbar} />
 
-			<CircularProgress color="inherit" />
-		  </Grid>
-		);
-	  }
+        <CircularProgress color="inherit" />
+      </Grid>
+    );
+  }
 
-	return (
-		<React.Fragment>
+  return (
+    <React.Fragment>
       <div className={classes.toolbar} />
       <Grid container>
         <Grid item xs={12}>
@@ -56,5 +59,5 @@ export const PublicSequenceListPage = () => {
         </Grid>
       </Grid>
     </React.Fragment>
-	)
-}
+  );
+};

@@ -1,33 +1,21 @@
-import React, { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React from "react";
+import { useSelector } from "react-redux";
 import {
   Button,
   CircularProgress,
   Grid,
   Theme,
-  Dialog,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  CardHeader,
   Card,
-  CardContent,
   Typography,
   CardMedia,
   CardActions,
   Tooltip,
 } from "@material-ui/core";
 import { createStyles, makeStyles } from "@material-ui/styles";
-import { useHistory } from "react-router-dom";
 
 import { selectIdToken } from "../../user/userSlice";
-import { IdToken } from "@auth0/auth0-react";
-import { AppDispatch } from "../../../app/store";
-import { Meditation } from "../../meditation/meditationService";
 import { Sequence } from "../sequenceService";
-import { setCurrentSequence } from "../sequenceSlice";
-import {Link as RouterLink} from "react-router-dom";
-// import { MeditationCard } from "./MeditationCard";
+import { Link as RouterLink } from "react-router-dom";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -57,7 +45,7 @@ const useStyles = makeStyles((theme: Theme) =>
       textAlign: "center",
     },
     appBar: {
-		background: "inherit"
+      background: "inherit",
     },
     title: {
       flexGrow: 1,
@@ -69,8 +57,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     cardMedia: {
       height: 0,
-      paddingTop: '56.25%'
-      // paddingTop: '50%'
+      paddingTop: "56.25%",
     },
   })
 );
@@ -80,33 +67,8 @@ export interface SequenceListProps {
   isLoading: boolean;
 }
 
-export function SequenceList({
-  sequences,
-  isLoading,
-}: SequenceListProps) {
+export function SequenceList({ sequences, isLoading }: SequenceListProps) {
   const idToken = useSelector(selectIdToken);
-
-  const dispatch = useDispatch<AppDispatch>();
-  const history = useHistory();
-
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedMeditation, setSelectedMeditation] = useState(
-    {} as Meditation
-  );
-
-  const chooseSequence = (sequence: Sequence) => {
-    dispatch(setCurrentSequence(sequence));
-  };
-
-//   const handleDeleteDialogClose = (shouldDelete: boolean) => {
-//     if (shouldDelete) {
-//       dispatch(
-//         deleteMeditationThunk(selectedMeditation._id, idToken as IdToken)
-//       );
-//     }
-//     setIsDeleteDialogOpen(false);
-//   };
-
   const classes = useStyles();
 
   if (isLoading) {
@@ -119,20 +81,27 @@ export function SequenceList({
     );
   }
 
-
   const sequenceCards = sequences.map((s) => (
     <Grid item xs={6} md={6} key={s._id}>
       <Card className={classes.cardRoot}>
-		  <CardMedia image={s.imageUrl} className={classes.cardMedia} />
+        <CardMedia image={s.imageUrl} className={classes.cardMedia} />
 
-      <CardActions>
-        <Grid container justify="space-between">
-        <Tooltip title={<Typography>{s.description}</Typography>}>
-        <Button component={RouterLink} to={`${s._userId === idToken?.sid ? "" : "/private" }/sequences/${s._id}`} style={{flexGrow: 1}}>{s.name}</Button>
-        </Tooltip>
-        </Grid>
-      </CardActions>
-	  </Card>
+        <CardActions>
+          <Grid container justify="space-between">
+            <Tooltip title={<Typography>{s.description}</Typography>}>
+              <Button
+                component={RouterLink}
+                to={`${
+                  s._userId === idToken?.sid ? "" : "/private"
+                }/sequences/${s._id}`}
+                style={{ flexGrow: 1 }}
+              >
+                {s.name}
+              </Button>
+            </Tooltip>
+          </Grid>
+        </CardActions>
+      </Card>
     </Grid>
   ));
 
@@ -141,29 +110,6 @@ export function SequenceList({
       <Grid container className={classes.selectorGrid} spacing={1}>
         {sequenceCards}
       </Grid>
-      {/* <Dialog open={isDeleteDialogOpen} onClose={handleDeleteDialogClose}>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this meditation? This action <b>can not</b> be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => handleDeleteDialogClose(false)}
-            autoFocus
-            variant="contained"
-          >
-            No
-          </Button>
-          <Button
-            onClick={() => handleDeleteDialogClose(true)}
-            color="secondary"
-            variant="contained"
-          >
-            Yes
-          </Button>
-        </DialogActions>
-      </Dialog> */}
     </React.Fragment>
   );
 }

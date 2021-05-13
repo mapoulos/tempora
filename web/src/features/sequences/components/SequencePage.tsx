@@ -26,7 +26,6 @@ import { Meditation } from "../../meditation/meditationService";
 import { setCurrentMeditation } from "../../meditation/meditationSlice";
 import { selectIdToken } from "../../user/userSlice";
 import {
-  deleteSequenceById,
   fetchPrivateSequenceById,
   fetchPublicSequenceById,
   Sequence,
@@ -50,7 +49,6 @@ const useStyles = makeStyles((theme: Theme) =>
     cardMedia: {
       height: 0,
       paddingTop: "56.25%",
-      // paddingTop: '50%'
     },
   })
 );
