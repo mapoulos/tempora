@@ -8,8 +8,10 @@ import App from "./App";
 import store from "./app/store";
 import { fetchPublicMeditationsThunk } from "./features/meditation/meditationSlice";
 import { Auth0Provider, Auth0ProviderOptions } from "@auth0/auth0-react";
+import { fetchPublicSequencesThunk } from "./features/sequences/sequenceSlice";
 
 store.dispatch(fetchPublicMeditationsThunk());
+store.dispatch(fetchPublicSequencesThunk());
 
 const darkTheme = createMuiTheme({
   palette: {

@@ -12,7 +12,7 @@ import { CardContent } from "@material-ui/core";
 import { Card } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
 import React, { useState } from "react";
-import { Meditation } from "./meditationService";
+import { Meditation } from "../meditationService";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -108,7 +108,7 @@ export const MeditationCard = ({
         </CardActions>
       </Card>
       <Menu
-        id={`edit-menu`}
+        id={`edit-menu-${meditation._id}`}
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         keepMounted

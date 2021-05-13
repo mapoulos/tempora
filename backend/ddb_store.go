@@ -166,10 +166,16 @@ func (store DynamoMeditationStore) ListMeditations(userId string) ([]Meditation,
 	params := &dynamodb.QueryInput{
 		TableName:              aws.String(store.tableName),
 		IndexName:              aws.String("gs2"),
-		KeyConditionExpression: aws.String("ppk = :userId"),
+		KeyConditionExpression: aws.String("ppk = :userId and begins_with(#sk, :med)"),
+		ExpressionAttributeNames: map[string]*string{
+			"#sk": aws.String("sk"),
+		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":userId": {
 				S: aws.String(userId),
+			},
+			":med": {
+				S: aws.String("med#"),
 			},
 		},
 		ScanIndexForward: aws.Bool(false),
@@ -199,11 +205,17 @@ func (store DynamoMeditationStore) ListMeditations(userId string) ([]Meditation,
 func (store DynamoMeditationStore) ListPublicMeditations() ([]Meditation, error) {
 	params := &dynamodb.QueryInput{
 		TableName:              aws.String(store.tableName),
-		KeyConditionExpression: aws.String("pppk = :public"),
+		KeyConditionExpression: aws.String("pppk = :public and begins_with(#sk, :med)"),
 		IndexName:              aws.String("gs3"),
+		ExpressionAttributeNames: map[string]*string{
+			"#sk": aws.String("sk"),
+		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":public": {
 				S: aws.String("public"),
+			},
+			":med": {
+				S: aws.String("med#"),
 			},
 		},
 		ScanIndexForward: aws.Bool(false),

@@ -1,30 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   deleteMeditationThunk,
-  fetchPrivateMeditationsThunk,
   setCurrentMeditation,
-} from "./meditationSlice";
+} from "../meditationSlice";
 import {
   Button,
   CircularProgress,
   Grid,
   Theme,
-  Typography,
-  AppBar,
-  Toolbar,
   Dialog,
   DialogContent,
   DialogContentText,
   DialogActions,
 } from "@material-ui/core";
-import AddIcon from "@material-ui/icons/Add";
 import { createStyles, makeStyles } from "@material-ui/styles";
-import { Link as RouterLink, useHistory } from "react-router-dom";
-import { Meditation } from "./meditationService";
-import { selectIdToken } from "../user/userSlice";
-import { IdToken, useAuth0 } from "@auth0/auth0-react";
-import { AppDispatch } from "../../app/store";
+import { useHistory } from "react-router-dom";
+import { Meditation } from "../meditationService";
+import { selectIdToken } from "../../user/userSlice";
+import { IdToken } from "@auth0/auth0-react";
+import { AppDispatch } from "../../../app/store";
 import { MeditationCard } from "./MeditationCard";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -56,7 +51,6 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     appBar: {
 		background: "inherit"
-    //   background: theme.palette.grey[600],
     },
     title: {
       flexGrow: 1,
@@ -121,7 +115,7 @@ export function MeditationList({
           history.push("/");
         }}
         onEdit={() => {
-          history.push(`/meditations/${m._id}/update`);
+          history.push(`/private/meditations/${m._id}/update`);
         }}
         onDelete={() => {
           setSelectedMeditation(m);

@@ -1,6 +1,6 @@
 # Serverless directories
 .serverless
-
+.DS_Store
 # golang output binary directory
 bin
 

@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-	fetchPrivateMeditationsThunk,
+  fetchPrivateMeditationsThunk,
   selectIsPrivateMeditationsLoading,
   selectPrivateMeditations,
-} from "./meditationSlice";
+} from "../meditationSlice";
 import {
   Button,
   CircularProgress,
@@ -16,9 +16,9 @@ import AddIcon from "@material-ui/icons/Add";
 import { createStyles, makeStyles } from "@material-ui/styles";
 import { IdToken, useAuth0 } from "@auth0/auth0-react";
 import { MeditationList } from "./MeditationList";
-import { AppDispatch } from "../../app/store";
-import { selectIdToken } from "../user/userSlice";
-import {Link as RouterLink} from "react-router-dom";
+import { AppDispatch } from "../../../app/store";
+import { selectIdToken } from "../../user/userSlice";
+import { Link as RouterLink } from "react-router-dom";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -51,8 +51,8 @@ export function PrivateMeditationsPage() {
   const isPrivateMeditationsLoading = useSelector(
     selectIsPrivateMeditationsLoading
   );
-  const idToken = useSelector(selectIdToken)
-  const dispatch = useDispatch<AppDispatch>()
+  const idToken = useSelector(selectIdToken);
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -87,11 +87,19 @@ export function PrivateMeditationsPage() {
     <React.Fragment>
       <div className={classes.toolbar} />
       <Grid container>
-		  <Grid item  xs={12} className={classes.buttonRow}>
-			  <Grid container direction="row-reverse">
-			  <Button variant="outlined" size="large" component={RouterLink} to="/create-meditation">Add<AddIcon/></Button>
-			  </Grid>
-		  </Grid>
+        <Grid item xs={12} className={classes.buttonRow}>
+          <Grid container direction="row-reverse">
+            <Button
+              variant="outlined"
+              size="large"
+              component={RouterLink}
+              to="/private/meditations/create"
+            >
+              Add
+              <AddIcon />
+            </Button>
+          </Grid>
+        </Grid>
         <Grid item xs={12}>
           <MeditationList
             meditations={privateMeditations}

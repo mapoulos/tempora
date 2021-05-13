@@ -1,46 +1,26 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchPrivateMeditationsThunk,
   fetchPublicMeditationsThunk,
-  selectIsPrivateMeditationsLoading,
   selectIsPublicMeditationsLoading,
-  selectPrivateMeditations,
   selectPublicMeditations,
-} from "./meditationSlice";
+} from "../meditationSlice";
 import {
-  Button,
   CircularProgress,
   Grid,
   Theme,
-  Typography,
 } from "@material-ui/core";
-import AddIcon from "@material-ui/icons/Add";
 import { createStyles, makeStyles } from "@material-ui/styles";
-import { useAuth0 } from "@auth0/auth0-react";
 import { MeditationList } from "./MeditationList";
-import { AppDispatch } from "../../app/store";
+import { AppDispatch } from "../../../app/store";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    cardActions: {
-      flex: 1,
-      width: "100%",
-      justifyContent: "flex-end",
-      flexDirection: "row",
-    },
-    selectorGrid: {
-      alignContent: "center",
-      justifyContent: "center",
-    },
     spinner: {
       height: "100vh",
       flex: 1,
       alignContent: "center",
       justifyContent: "center",
-    },
-    buttonRow: {
-      marginBottom: 10,
     },
     toolbar: theme.mixins.toolbar,
   })
