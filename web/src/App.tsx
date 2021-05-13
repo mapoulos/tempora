@@ -45,9 +45,10 @@ import { CreateOrUpdateMeditation } from "./features/meditation/components/Creat
 import { PrivateMeditationsPage } from "./features/meditation/components/PrivateMeditationsPage";
 import { PublicMeditationsPage } from "./features/meditation/components/PublicMeditationsPage";
 import { PublicSequenceListPage } from "./features/sequences/components/PublicSequenceListPage";
-import { SequencePage } from "./features/sequences/components/PublicSequencePage";
+import { SequencePage } from "./features/sequences/components/SequencePage";
 import { PrivateSequenceListPage } from "./features/sequences/components/PrivateSequenceListPage";
 import { CreateOrUpdateSequence } from "./features/sequences/components/CreateUpdateSequence";
+import { MeditationSelector } from "./features/sequences/components/MeditationSelector";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -276,11 +277,14 @@ function App(props: WithWidth) {
             <Route path="/private/meditations">
               <PrivateMeditationsPage />
             </Route>
+            <Route path="/private/sequences/create/select-meditations">
+              <MeditationSelector />
+            </Route>
             <Route path="/private/sequences/create">
               <CreateOrUpdateSequence />
             </Route>
             <Route path="/private/sequences/:sequenceId/update">
-              <PrivateSequenceListPage />
+              <CreateOrUpdateSequence />
             </Route>
             <Route path="/private/sequences/:sequenceId">
               <SequencePage isPublic={false} />

@@ -14,20 +14,31 @@ import {
   Checkbox,
   Typography,
   Tooltip,
+  ListItem,
+  List,
+  ButtonBase,
+  Divider,
 } from "@material-ui/core";
-import { Cancel } from "@material-ui/icons";
+import { Cancel, Save } from "@material-ui/icons";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
 import { AppDispatch } from "../../../app/store";
+import {
+  fetchPrivateMeditationsThunk,
+  selectPrivateMeditations,
+} from "../../meditation/meditationSlice";
 import { selectIdToken } from "../../user/userSlice";
 import { CreateSequenceInput, uploadImage } from "../sequenceService";
 import {
-	createSequenceThunk,
-	selectPrivateSequences,
-	updateSequenceThunk
-} from "../sequenceSlice"
-
+  createSequenceThunk,
+  selectMeditationSelectorMeditations,
+  selectPrivateSequences,
+  updateSequenceThunk,
+} from "../sequenceSlice";
+import { Link as RouterLink } from "react-router-dom";
+import { SelectableMeditationCard } from "../../meditation/components/SelectableMeditationCard";
+import { Meditation } from "../../meditation/meditationService";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -69,6 +80,9 @@ const useStyles = makeStyles((theme: Theme) =>
       justifyContent: "flex-end",
       padding: theme.spacing(2),
     },
+    buttonRow: {
+      marginBottom: 10,
+    },
   })
 );
 
@@ -80,7 +94,10 @@ export const CreateOrUpdateSequence = () => {
   const dispatch = useDispatch<AppDispatch>();
   const idToken = useSelector(selectIdToken);
   const privateSequences = useSelector(selectPrivateSequences);
+  const privateMeditations = useSelector(selectPrivateMeditations);
+
   const history = useHistory();
+  const [showMedidtationSelector, setShowMeditationSelector] = useState(false);
   const [state, setState] = useState({
     audioFile: {} as File,
     sequence: {
@@ -88,8 +105,12 @@ export const CreateOrUpdateSequence = () => {
       description: "",
       isPublic: false,
       uploadKey: "",
+      meditationIds: [] as string[]
     },
   });
+
+
+
 
   const { sequenceId } = useParams<CreateOrUpdateSequenceProps>();
 
@@ -100,7 +121,21 @@ export const CreateOrUpdateSequence = () => {
 
   const isUpdate = sequence !== undefined;
 
+  const [selectedMeditations, setInprogressSelectedMeditations] = useState(
+    (sequence?.meditations ?? []).reduce(
+      (
+        acc: Record<string, Meditation>,
+        m: Meditation
+      ): Record<string, Meditation> => {
+        acc[m._id] = m;
+        return acc;
+      },
+      {}
+    )
+  );
+
   useEffect(() => {
+    dispatch(fetchPrivateMeditationsThunk(idToken as IdToken));
     if (isUpdate) {
       setState({
         ...state,
@@ -111,8 +146,10 @@ export const CreateOrUpdateSequence = () => {
           isPublic: sequence?.isPublic ?? false,
         },
       });
+    } else {
+      // dispatch(setSelectedMeditations([]))
     }
-  }, []);
+  }, [idToken]);
 
   const isTextFieldValid = (val: string) => {
     const trimmed = val.trim();
@@ -134,7 +171,9 @@ export const CreateOrUpdateSequence = () => {
       },
     });
   };
-  const handleDescriptionChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDescriptionChange = (
+    evt: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setState({
       ...state,
       sequence: {
@@ -176,8 +215,10 @@ export const CreateOrUpdateSequence = () => {
   };
 
   const handleSubmit = async () => {
-    const createOrUpdateSequenceArgs: CreateSequenceInput =
-      state.sequence;
+    const createOrUpdateSequenceArgs: CreateSequenceInput = {
+      ...state.sequence,
+      meditationIds: Object.values(selectedMeditations).map((m) => m._id),
+    };
     try {
       if (isUpdate) {
         await dispatch(
@@ -192,10 +233,7 @@ export const CreateOrUpdateSequence = () => {
         history.push(`/private/sequences/${sequenceId}`);
       } else {
         const newSequence = await dispatch(
-          createSequenceThunk(
-            createOrUpdateSequenceArgs,
-            idToken as IdToken
-          )
+          createSequenceThunk(createOrUpdateSequenceArgs, idToken as IdToken)
         );
         history.push(`/private/sequences/${newSequence._id}`);
       }
@@ -210,18 +248,79 @@ export const CreateOrUpdateSequence = () => {
       audioFile: {} as File,
       sequence: {
         ...state.sequence,
-        uploadKey: ""
-      }
-    })
+        uploadKey: "",
+      },
+    });
+  };
+
+  if (showMedidtationSelector) {
+    return (
+      <React.Fragment>
+        <div className={classes.toolbar} />
+        <Grid container alignContent="center" justify="center" spacing={1}>
+          <Grid item xs={12} className={classes.buttonRow}>
+            <Grid container direction="row-reverse">
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                style={{margin: 10}}
+
+                onClick={() => {
+                  setState({
+                    ...state,
+                    sequence: {
+                      ...state.sequence,
+                      meditationIds: Object.values(selectedMeditations).map(m => m._id)
+                    }
+                  })
+                  setShowMeditationSelector(false)
+                }}
+              >
+                Save
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                style={{margin: 10}}
+                onClick={() => {
+                  setShowMeditationSelector(false)
+                }}
+              >
+                Cancel
+              </Button>
+            </Grid>
+          </Grid>
+          {privateMeditations.map((m) => (
+            <SelectableMeditationCard
+              meditation={m}
+              key={m._id}
+              onSelect={(meditation) => {
+                if (selectedMeditations[meditation._id] === undefined) {
+                  setInprogressSelectedMeditations({
+                    ...selectedMeditations,
+                    [meditation._id]: meditation,
+                  });
+                } else {
+                  delete selectedMeditations[meditation._id];
+                  setInprogressSelectedMeditations({
+                    ...selectedMeditations,
+                  });
+                }
+              }}
+              selected={selectedMeditations[m._id] !== undefined}
+            />
+          ))}
+        </Grid>
+      </React.Fragment>
+    );
   }
 
   return (
     <React.Fragment>
       <div className={classes.toolbar} />
       <Card>
-        <CardHeader
-          title={isUpdate ? "Update Sequence" : "Create Sequence"}
-        />
+        <CardHeader title={isUpdate ? "Update Sequence" : "Create Sequence"} />
         <CardContent>
           <form className={classes.formRoot} autoComplete="off">
             <Grid container className={classes.gridContainer}>
@@ -254,40 +353,50 @@ export const CreateOrUpdateSequence = () => {
                 ></TextField>
               </Grid>
               <Grid container direction="row" justify="flex-start">
-                <Grid item className={classes.fileSelectRow} xs={12}>
+                <Grid item className={classes.fileSelectRow} xs={6}>
                   {state.sequence.uploadKey === "" ? (
                     <Grid container>
                       <Grid item>
-                    <Button
-                      style={{ height: "100%" }}
-                      size="large"
-                      component="label"
-                      variant="contained"
-                      fullWidth
-                    >
-                      Choose{" "}
-                      {isUpdate ? (
-                        <div>&nbsp;New&nbsp;</div>
-                      ) : (
-                        <div>&nbsp;</div>
-                      )}{" "}
-                      Image
-                      <input
-                        type="file"
-                        hidden
-                        accept=".png,.jpg"
-                        onChange={handleFileSelection}
-                      ></input>
-                    </Button>
-                    </Grid>
+                        <Button
+                          style={{ height: "100%" }}
+                          size="large"
+                          component="label"
+                          variant="contained"
+                          fullWidth
+                        >
+                          Choose{" "}
+                          {isUpdate ? (
+                            <div>&nbsp;New&nbsp;</div>
+                          ) : (
+                            <div>&nbsp;</div>
+                          )}{" "}
+                          Image
+                          <input
+                            type="file"
+                            hidden
+                            accept=".png,.jpg"
+                            onChange={handleFileSelection}
+                          ></input>
+                        </Button>
+                      </Grid>
                     </Grid>
                   ) : (
                     <Grid container direction="row">
                       <Grid item xs={12}>
                         <TextField
                           variant="outlined"
-                          InputProps={{ readOnly: true,
-                            endAdornment: <Button size="small" onClick={() => {resetChooseMedia()}}><Cancel /></Button>
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <Button
+                                size="small"
+                                onClick={() => {
+                                  resetChooseMedia();
+                                }}
+                              >
+                                <Cancel />
+                              </Button>
+                            ),
                           }}
                           fullWidth
                           value={state.audioFile.name}
@@ -296,21 +405,73 @@ export const CreateOrUpdateSequence = () => {
                     </Grid>
                   )}
                 </Grid>
+                <Grid item className={classes.fileSelectRow} xs={6}>
+                  <Grid container justify="flex-end">
+                    <Button
+                      size="large"
+                      variant="contained"
+                      onClick={() => {
+                        setShowMeditationSelector(true);
+                      }}
+                    >
+                      Select Meditations
+                    </Button>
+                  </Grid>
+                </Grid>
               </Grid>
               <Grid item className={classes.gridItem} xs={12}>
-                <Tooltip title={<Typography>Published series are discoverable by all users of Tempora.</Typography>}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={state.sequence.isPublic}
-                      size="medium"
-                      onChange={handleIsPublicSelection}
-                    />
+                <Tooltip
+                  title={
+                    <Typography>
+                      Published series are discoverable by all users of Tempora.
+                    </Typography>
                   }
-                  label="Published"
-                  labelPlacement="end"
-                />
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={state.sequence.isPublic}
+                        size="medium"
+                        onChange={handleIsPublicSelection}
+                      />
+                    }
+                    label="Published"
+                    labelPlacement="end"
+                  />
                 </Tooltip>
+              </Grid>
+              <Grid item xs={12}>
+                <Divider />
+              </Grid>
+              <Grid item xs={12} style={{ marginTop: 10 }}>
+                <Typography variant="h6">Meditations</Typography>
+              </Grid>
+              <Grid item className={classes.gridItem} xs={12}>
+                <List>
+                  {Object.values(selectedMeditations).map((m, idx) => (
+                    <ListItem divider>
+                      <Grid container justify="flex-start" spacing={2}>
+                        <Grid item spacing={10}>
+                          <Typography variant="subtitle2">
+                            {idx + 1}) {m.name}
+                          </Typography>
+                        </Grid>
+                        <Grid item spacing={10} xs={9}>
+                          <Typography
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {m.text}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </ListItem>
+                  ))}
+                </List>
               </Grid>
             </Grid>
           </form>

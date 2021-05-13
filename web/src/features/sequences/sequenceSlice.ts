@@ -4,6 +4,7 @@ import type { RootState } from "../../app/store";
 import { ThunkAction } from "redux-thunk";
 import { IdToken } from "@auth0/auth0-spa-js";
 import { createSequence, CreateSequenceInput, deleteSequenceById, fetchPrivateSequences, fetchPublicSequences, Sequence, updateSequence, UpdateSequenceInput } from "./sequenceService";
+import { Meditation } from "../meditation/meditationService";
 
 interface SequenceState {
   public: {
@@ -14,6 +15,9 @@ interface SequenceState {
     sequences: Sequence[];
     isLoading: boolean;
   };
+  meditationSelector: {
+    meditations: Meditation[]
+  },
   current?: Sequence;
 }
 
@@ -26,6 +30,9 @@ const initialState: SequenceState = {
     sequences: [],
     isLoading: false,
   },
+  meditationSelector: {
+    meditations: [],
+  }
 };
 
 const sequenceSlice = createSlice({
@@ -46,6 +53,9 @@ const sequenceSlice = createSlice({
     },
     setCurrentSequence: (state, action: PayloadAction<Sequence>) => {
       state.current = action.payload;
+    },
+    setSelectedMeditations: (state, action: PayloadAction<Meditation[]>) => {
+      state.meditationSelector.meditations = action.payload
     },
   },
 });
@@ -133,12 +143,15 @@ export const {
   setPublicSequences,
   setPrivateSequences,
   setCurrentSequence,
+  setSelectedMeditations
 } = sequenceSlice.actions;
 
 export const selectPublicSequences = (state: RootState) =>
   state.sequence.public.sequences;
 export const selectPrivateSequences = (state: RootState) =>
   state.sequence.private.sequences;
+export const selectMeditationSelectorMeditations = (state: RootState) =>
+  state.sequence.meditationSelector.meditations;
 export const selectCurrentSequence = (state: RootState) =>
   state.sequence.current || null;
 export const selectIsPublicSequencesLoading = (state: RootState) =>

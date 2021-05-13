@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-	fetchPrivateMeditationsThunk,
+  fetchPrivateMeditationsThunk,
   selectIsPrivateMeditationsLoading,
   selectPrivateMeditations,
 } from "../meditationSlice";
@@ -51,14 +51,13 @@ export function PrivateMeditationsPage() {
   const isPrivateMeditationsLoading = useSelector(
     selectIsPrivateMeditationsLoading
   );
-  const idToken = useSelector(selectIdToken)
-  const dispatch = useDispatch<AppDispatch>()
+  const idToken = useSelector(selectIdToken);
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     if (!isAuthenticated) {
       return;
     }
-
 
     dispatch(fetchPrivateMeditationsThunk(idToken as IdToken));
   }, [isAuthenticated]);
@@ -88,11 +87,19 @@ export function PrivateMeditationsPage() {
     <React.Fragment>
       <div className={classes.toolbar} />
       <Grid container>
-		  <Grid item  xs={12} className={classes.buttonRow}>
-			  <Grid container direction="row-reverse">
-			  <Button variant="outlined" size="large" component={RouterLink} to="/private/meditations/create">Add<AddIcon/></Button>
-			  </Grid>
-		  </Grid>
+        <Grid item xs={12} className={classes.buttonRow}>
+          <Grid container direction="row-reverse">
+            <Button
+              variant="outlined"
+              size="large"
+              component={RouterLink}
+              to="/private/meditations/create"
+            >
+              Add
+              <AddIcon />
+            </Button>
+          </Grid>
+        </Grid>
         <Grid item xs={12}>
           <MeditationList
             meditations={privateMeditations}

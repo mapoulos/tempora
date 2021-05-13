@@ -128,7 +128,7 @@ export function SequenceList({
       <CardActions>
         <Grid container justify="space-between">
         <Tooltip title={<Typography>{s.description}</Typography>}>
-        <Button component={RouterLink} to={`${s.isPublic ? "" : "/private" }/sequences/${s._id}`} style={{flexGrow: 1}}>{s.name}</Button>
+        <Button component={RouterLink} to={`${s._userId === idToken?.sid ? "" : "/private" }/sequences/${s._id}`} style={{flexGrow: 1}}>{s.name}</Button>
         </Tooltip>
         </Grid>
       </CardActions>
@@ -144,8 +144,7 @@ export function SequenceList({
       {/* <Dialog open={isDeleteDialogOpen} onClose={handleDeleteDialogClose}>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this meditation? This action
-            <b>can not</b> be undone.
+            Are you sure you want to delete this meditation? This action <b>can not</b> be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

@@ -33,6 +33,7 @@ export interface CreateSequenceInput {
   name: string;
   description: string;
   isPublic: boolean;
+  meditationIds: string[];
 }
 
 export interface UpdateSequenceInput extends CreateSequenceInput {
