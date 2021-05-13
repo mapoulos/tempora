@@ -6,7 +6,6 @@ import {
   Typography,
   Hidden,
   WithWidth,
-  isWidthUp,
   CssBaseline,
   useMediaQuery,
   Menu,
@@ -92,20 +91,14 @@ const useStyles = makeStyles((theme: Theme) =>
 
 function App(props: WithWidth) {
   const classes = useStyles();
-  // const { width } = props;
   const theme = useTheme();
   const mdOrHigher = useMediaQuery(theme.breakpoints.up("md"));
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const dispatch = useDispatch();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const history = useHistory();
-  const {
-    isAuthenticated,
-    user,
-    loginWithRedirect,
-    getIdTokenClaims,
-    logout,
-  } = useAuth0();
+  const { isAuthenticated, user, loginWithRedirect, getIdTokenClaims, logout } =
+    useAuth0();
 
   useEffect(() => {
     dispatch(getIdToken(getIdTokenClaims));
@@ -171,13 +164,17 @@ function App(props: WithWidth) {
           style={{ textAlign: "left" }}
         >
           <MenuItem
-            component={RouterLink} to="/private/meditations" onClick={() => handleClose()}
+            component={RouterLink}
+            to="/private/meditations"
+            onClick={() => handleClose()}
           >
             My Meditations
           </MenuItem>
           <MenuItem
             divider
-            component={RouterLink} to="/private/sequences" onClick={() => handleClose()}
+            component={RouterLink}
+            to="/private/sequences"
+            onClick={() => handleClose()}
           >
             My Series
           </MenuItem>
@@ -293,15 +290,12 @@ function App(props: WithWidth) {
               <PrivateSequenceListPage />
             </Route>
 
-
-
             {/* the medtitation timer*/}
             <Route path="/">
               <MeditationTimer />
             </Route>
           </Switch>
         </Container>
-        {/* </main> */}
       </div>
     </Router>
   );
