@@ -92,7 +92,7 @@ export function SequenceList({ sequences, isLoading }: SequenceListProps) {
               <Button
                 component={RouterLink}
                 to={`${
-                  s._userId === idToken?.sid ? "" : "/private"
+                  s._userId !== (idToken?.sub ?? "NOT_LOGGED_IN") ? "" : "/private"
                 }/sequences/${s._id}`}
                 style={{ flexGrow: 1 }}
               >
