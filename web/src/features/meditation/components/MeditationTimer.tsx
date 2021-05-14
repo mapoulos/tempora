@@ -97,8 +97,6 @@ export function MeditationTimer() {
 
   const sessionLength = useSelector(selectSessionLength);
   const [timeRemaining, setTimeRemaining] = useState(sessionLength);
-  // const [timerState, setTimerState] = useState({timeRemaining: sessionLength})
-
 
   const [bellDuration, setBellDuration] = useState(0);
   const [meditationDuration, setMeditationDuration] = useState(0);

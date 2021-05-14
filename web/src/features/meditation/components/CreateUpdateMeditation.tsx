@@ -21,7 +21,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
 import { AppDispatch } from "../../../app/store";
 import { selectIdToken } from "../../user/userSlice";
-import { CreateMeditationInput, uploadMp3 } from "../meditationService";
+import { CreateMeditationInput, uploadAudio } from "../meditationService";
 import {
   createMeditationThunk,
   selectPrivateMeditations,
@@ -151,7 +151,7 @@ export const CreateOrUpdateMeditation = () => {
     const file = files[0];
 
     if (idToken) {
-      const key = await uploadMp3(file, idToken);
+      const key = await uploadAudio(file, idToken);
       setState({
         ...state,
         audioFile: file,
@@ -266,17 +266,17 @@ export const CreateOrUpdateMeditation = () => {
                       variant="contained"
                       fullWidth
                     >
-                      Choose{" "}
+                      Choose
                       {isUpdate ? (
                         <div>&nbsp;New&nbsp;</div>
                       ) : (
                         <div>&nbsp;</div>
                       )}{" "}
-                      MP3
+                      Audio
                       <input
                         type="file"
                         hidden
-                        accept=".mp3"
+                        accept=".mp3,.m4a"
                         onChange={handleFileSelection}
                       ></input>
                     </Button>

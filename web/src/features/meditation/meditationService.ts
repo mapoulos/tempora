@@ -64,7 +64,7 @@ export const fetchPrivateMeditations = async (
     });
 };
 
-export const uploadMp3 = async (
+export const uploadAudio = async (
   file: File,
   token: IdToken
 ): Promise<string> => {
@@ -76,9 +76,22 @@ export const uploadMp3 = async (
   });
   const { uploadUrl, uploadKey } = await getUploadUrlResponse.json();
 
+  const contentType = (() => {
+    if (file.name.endsWith(".mp3")) {
+      return "audio/mpeg"
+    }
+    if (file.name.endsWith(".m4a")) {
+      return "audio/mp4"
+    }
+    return "UNEXPECTED_CONTENT_TYPE"
+  })()
+
   await fetch(uploadUrl, {
     method: "PUT",
     body: file,
+    headers: {
+      'Content-Type' : contentType
+    }
   });
 
   return uploadKey;

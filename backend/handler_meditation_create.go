@@ -39,7 +39,7 @@ func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	}
 
 	// ensure the key is in s3 and that we have an mp3
-	err = ValidateMP3(input.UploadKey, awsConfig)
+	fileExt, err := ValidateAudio(input.UploadKey, awsConfig)
 	if err != nil {
 		return badRequest("Provided file is not a properly encoded mp3.")
 	}
@@ -48,15 +48,17 @@ func CreateMeditationHandler(req events.APIGatewayV2HTTPRequest, store *DynamoMe
 	now := time.Now()
 
 	// move the mp3 to public and rename
-	newPath := "public/" + id + ".mp3"
-	err = RenameMP3(input.UploadKey, newPath, awsConfig)
+	suffix := id + fileExt // e.g. 1235456.m4a
+	newPath := "public/" + suffix
+
+	err = RenameAudio(input.UploadKey, newPath, awsConfig)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
 	newMeditation := Meditation{
 		ID:        id,
-		URL:       mapUUIDToPublicURL(id),
+		URL:       mapPathSuffixToFullURL(suffix),
 		Name:      input.Name,
 		Text:      input.Text,
 		Public:    input.Public,

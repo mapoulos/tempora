@@ -47,4 +47,34 @@ func TestMP3Validation(t *testing.T) {
 			t.Error("Expected a valid duration, got invalid duration")
 		}
 	})
+
+	t.Run("Accept an m4a that is less than 90s", func(t *testing.T) {
+		reader, _ := os.Open("../media/LuminousDarkness.m4a")
+
+		duration, err := m4aduration(reader)
+		if err != nil {
+			t.Error("Expected a valid duration, but go error")
+			t.Error(err)
+		}
+		valid := isDurationValid(duration)
+		if !valid {
+			t.Error("Expected a valid duration, got invalid duration")
+		}
+
+	})
+
+	t.Run("Do not accept an m4a that is greater than 90s", func(t *testing.T) {
+		reader, _ := os.Open("../media/too_long_2m_9s.m4a")
+
+		duration, err := m4aduration(reader)
+		if err != nil {
+			t.Error("Expected a valid duration, but go error")
+			t.Error(err)
+		}
+		valid := isDurationValid(duration)
+		if valid {
+			t.Error("Expected valid=false, but got valid=true")
+		}
+
+	})
 }
