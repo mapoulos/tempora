@@ -22,6 +22,7 @@ import { Cancel } from "@material-ui/icons";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
+import { DragDropContext, Draggable, Droppable, DropResult } from 'react-beautiful-dnd';
 import { AppDispatch } from "../../../app/store";
 import {
   fetchPrivateMeditationsThunk,
@@ -95,16 +96,7 @@ export const CreateOrUpdateSequence = () => {
 
   const history = useHistory();
   const [showMedidtationSelector, setShowMeditationSelector] = useState(false);
-  const [state, setState] = useState({
-    audioFile: {} as File,
-    sequence: {
-      name: "",
-      description: "",
-      isPublic: false,
-      uploadKey: "",
-      meditationIds: [] as string[],
-    },
-  });
+  
 
   const { sequenceId } = useParams<CreateOrUpdateSequenceProps>();
 
@@ -114,6 +106,17 @@ export const CreateOrUpdateSequence = () => {
       : undefined;
 
   const isUpdate = sequence !== undefined;
+
+  const [state, setState] = useState({
+    audioFile: {} as File,
+    sequence: {
+      name: "",
+      description: "",
+      isPublic: false,
+      uploadKey: "",
+      meditations: isUpdate ? sequence?.meditations ?? [] : [] as Meditation[],
+    },
+  });
 
   const [selectedMeditations, setInprogressSelectedMeditations] = useState(
     (sequence?.meditations ?? []).reduce(
@@ -127,6 +130,9 @@ export const CreateOrUpdateSequence = () => {
       {}
     )
   );
+
+  
+  
 
   useEffect(() => {
     dispatch(fetchPrivateMeditationsThunk(idToken as IdToken));
@@ -209,7 +215,7 @@ export const CreateOrUpdateSequence = () => {
   const handleSubmit = async () => {
     const createOrUpdateSequenceArgs: CreateSequenceInput = {
       ...state.sequence,
-      meditationIds: Object.values(selectedMeditations).map((m) => m._id),
+      meditationIds: state.sequence.meditations.map(m => m._id)
     };
     try {
       if (isUpdate) {
@@ -245,6 +251,25 @@ export const CreateOrUpdateSequence = () => {
     });
   };
 
+  const onDragEnd = (result: DropResult) => { 
+    const before = result.source.index
+    const after = result.destination?.index ?? result.source.index
+    if (after == before) {
+      return
+    }
+    const meditations = state.sequence.meditations
+    const without = meditations.filter(({_id}) => _id !== meditations[before]._id)
+    const newOrder = [...without.slice(0, after), meditations[before], ...without.slice(after)]
+    
+    setState({
+      ...state,
+      sequence: {
+        ...state.sequence,
+        meditations: newOrder
+      }
+    })
+  }
+
   /////////
   // Not exactly ideal to shove this into this component, but having the meditation selector
   // as part of the form vastly simplifies the state management because then we can avoid
@@ -267,9 +292,7 @@ export const CreateOrUpdateSequence = () => {
                     ...state,
                     sequence: {
                       ...state.sequence,
-                      meditationIds: Object.values(selectedMeditations).map(
-                        (m) => m._id
-                      ),
+                      meditations: Object.values(selectedMeditations),
                     },
                   });
                   setShowMeditationSelector(false);
@@ -445,31 +468,43 @@ export const CreateOrUpdateSequence = () => {
                 <Typography variant="h6">Meditations</Typography>
               </Grid>
               <Grid item className={classes.gridItem} xs={12}>
-                <List>
-                  {Object.values(selectedMeditations).map((m, idx) => (
-                    <ListItem divider>
-                      <Grid container justify="flex-start" spacing={2}>
-                        <Grid item spacing={10}>
-                          <Typography variant="subtitle2">
-                            {idx + 1}) {m.name}
-                          </Typography>
-                        </Grid>
-                        <Grid item spacing={10} xs={9}>
-                          <Typography
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {m.text}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </ListItem>
-                  ))}
-                </List>
+                <DragDropContext onDragEnd={onDragEnd}>
+                  <Droppable droppableId="meditations">
+                    {provided => (
+                      <List innerRef={provided.innerRef}>
+                        {state.sequence.meditations.map((m, idx) => (
+                          <Draggable draggableId={m._id} index={idx}>
+                            { draggableProvided => (
+                              <ListItem divider innerRef={draggableProvided.innerRef} {...draggableProvided.draggableProps} {...draggableProvided.dragHandleProps}>
+                                <Grid container justify="flex-start" spacing={2}>
+                                  <Grid item spacing={10}>
+                                    <Typography variant="subtitle2">
+                                      {idx + 1}) {m.name}
+                                    </Typography>
+                                  </Grid>
+                                  <Grid item spacing={10} xs={9}>
+                                    <Typography
+                                      style={{
+                                        display: "-webkit-box",
+                                        WebkitLineClamp: 3,
+                                        WebkitBoxOrient: "vertical",
+                                        overflow: "hidden",
+                                      }}
+                                    >
+                                      {m.text}
+                                    </Typography>
+                                  </Grid>
+                                </Grid>
+                              </ListItem>
+                            )
+                            }
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </List>
+                    )}
+                  </Droppable>
+                </DragDropContext>
               </Grid>
             </Grid>
           </form>
